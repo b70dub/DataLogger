@@ -46,13 +46,14 @@
 #include <string.h>
 #include <strings.h>
 
-#include "MX230_STD.h"
+#include "MX440_STD.h"
 #include "Delay_32.h"
-#include "5110_SPI2.h"
+//#include "5110_SPI2.h"
 #include "32_ADC.h"
 #include "ff.h"
 
-#define GetSystemClock() (40000000ul)
+//#define GetSystemClock() (40000000ul)
+#define GetSystemClock()        (80000000ul) //pic32 runs at 80mHz
 #define TOGGLES_PER_SEC   1000
 #define CORE_TICK_RATE   (GetSystemClock()/2/TOGGLES_PER_SEC)
 
@@ -66,7 +67,7 @@
  int   temp;       //final temperature will be cast into an integer
 
  int x;             //used for looping
- int z = 0;         //count for lcd
+ //int z = 0;         //count for lcd
  long values[1440]; //array for storing values
  long i;            //variable for storing values
  
@@ -199,16 +200,19 @@ ANSELBbits.ANSB1 = 1;
 adcON();
 
 //Initlize LCD
-LCD5110_init();
-LCD5110_clearScreen();
+//LCD5110_init();
+//LCD5110_clearScreen();
 
 
 /**********************Log Start***********************************************/
    //write data to lcd
-   LCD5110_send(0x40 + 0, 0); //Y address
-   LCD5110_send(0x80 + 0, 0); //X address
-   LCD5110_sendString ("Reading values");
-   delay_ms(1000);
+   //LCD5110_send(0x40 + 0, 0); //Y address
+   //LCD5110_send(0x80 + 0, 0); //X address
+   //LCD5110_sendString ("Reading values");
+   //delay_ms(1000);
+
+    printf ((const char *)"Reading Values \r\n");
+    //printf ((const rom far char *)"iInputValue = %d \r\n", iInputValue);
 
    //loop for a 24 hour period 60mins x 24hrs = 1440
    for (i = 0; i < 1440; i++){
@@ -239,19 +243,21 @@ LCD5110_clearScreen();
  i = 0;
 
 //Alert user card being initilized
-LCD5110_clearScreen();
-LCD5110_send(0x40 + 0, 0); //Y address
-LCD5110_send(0x80 + 0, 0); //X address
-LCD5110_sendString ("Init SDCARD");
+//LCD5110_clearScreen();
+//LCD5110_send(0x40 + 0, 0); //Y address
+//LCD5110_send(0x80 + 0, 0); //X address
+//LCD5110_sendString ("Init SDCARD");
+ printf ((const char *)"Init SDCARD \r\n");
 delay_ms (50);
 
 //Initialize Disk
 disk_initialize(0);
 
 //Aert user SD card is being mounted
-LCD5110_send(0x40 + 1, 0); //Y address
-LCD5110_send(0x80 + 0, 0); //X address
-LCD5110_sendString ("Mount SDCARD");
+//LCD5110_send(0x40 + 1, 0); //Y address
+//LCD5110_send(0x80 + 0, 0); //X address
+//LCD5110_sendString ("Mount SDCARD");
+printf ((const char *)"Mount SDCARD \r\n");
 delay_ms(50);
 
 //Mount Filesystem
@@ -265,38 +271,44 @@ f_open(&file1, path, FA_READ | FA_WRITE | FA_CREATE_ALWAYS);
 delay_ms(100);
 
 //Alert user data is being written
-LCD5110_send(0x40 + 2, 0); //Y address
-LCD5110_send(0x80 + 0, 0); //X address
-LCD5110_sendString ("Writing Data");
+//LCD5110_send(0x40 + 2, 0); //Y address
+//LCD5110_send(0x80 + 0, 0); //X address
+//LCD5110_sendString ("Writing Data");
+
+printf ((const char *)"Writing Data \r\n");
 
 //write data to data1.txt
 for (i = 0; i < 1440; i++){
     unsigned char buf[8];
 
     //convert values[] to ascii
-    itoa(buf, values[i], 10);
+    //itoa(buf, values[i], 10);
+
 
     //pointer to converted value
-    const char *text2 = buf;
+    //const char *text2 = buf;
 
+    //convert values[] to ascii and pass back a pointer to the result string ---------------- BTA modified so test it!!!
+    const char *text2 = itoa(values[i]);
     //write that value into text file
     f_write(&file1, text2, strlen(text2), &len);
  }
 
 
 //Alert user file is closing
-LCD5110_send(0x40 + 3, 0); //Y address
-LCD5110_send(0x80 + 0, 0); //X address
-LCD5110_sendString ("Close File");
+//LCD5110_send(0x40 + 3, 0); //Y address
+//LCD5110_send(0x80 + 0, 0); //X address
+//LCD5110_sendString ("Close File");
+printf ((const char *)"Close File \r\n");
 
 //Close data.txt
 f_close(&file1);
 
 //Alert user card is unmounting
-LCD5110_send(0x40 + 4, 0); //Y address
-LCD5110_send(0x80 + 0, 0); //X address
-LCD5110_sendString ("Unmount.Done");
-
+//LCD5110_send(0x40 + 4, 0); //Y address
+//LCD5110_send(0x80 + 0, 0); //X address
+//LCD5110_sendString ("Unmount.Done");
+printf ((const char *)"SD Card Unmounted \r\n");
 //unmount filesystem
 f_mount(0,NULL);
 

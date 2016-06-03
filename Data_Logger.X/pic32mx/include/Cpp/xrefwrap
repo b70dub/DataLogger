@@ -1,0 +1,816 @@
+// xrefwrap internal header
+#ifndef _XREFWRAP_
+#define _XREFWRAP_
+#include <xtr1common>
+
+_STD_BEGIN
+ namespace tr1 {	// TR1 additions
+ #if _HAS_VARIADIC_TEMPLATES
+	// TEMPLATE CLASS _Fun_class_base
+template<class _Ret,
+	class... _Types>
+	struct _Fun_class_base
+	{	// base if no arguments
+	typedef void _Arg0;	// not used
+	};
+
+template<class _Ret,
+	class _Farg0>
+	struct _Fun_class_base<_Ret, _Farg0>
+		: public _STD unary_function<_Farg0, _Ret>
+	{	// base if one argument
+	typedef _Farg0 _Arg0;
+	};
+
+template<class _Ret,
+	class _Farg0,
+	class _Farg1>
+	struct _Fun_class_base<_Ret, _Farg0, _Farg1>
+		: public _STD binary_function<_Farg0, _Farg1, _Ret>
+	{	// base if two arguments
+	typedef _Farg0 _Arg0;
+	};
+
+template<class _Ret,
+	class _Farg0,
+	class _Farg1,
+	class ... _Types>
+	struct _Fun_class_base<_Ret, _Farg0, _Farg1, _Types...>
+	{	// base if more than two arguments
+	typedef _Farg0 _Arg0;
+	};
+ #endif /* _HAS_VARIADIC_TEMPLATES */
+
+// IMPLEMENT _STD tr1::result_of
+
+ #if _HAS_VARIADIC_TEMPLATES && _HAS_DECLTYPE
+template <class _Ty>
+	_Ty&& _Get_synthesized_arg();		// not defined
+
+// template<class _Ty>
+// 	struct _Result_of;
+
+template<class _Fty,
+	class... _Args>
+	struct _Result_of
+	{	// template to determine result of call operation
+	typedef decltype(
+		_Get_synthesized_arg<_Fty>()(_Get_synthesized_arg<_Args>()...)) _Type;
+	};
+
+template <class _Ret,
+	class _Ty,
+	class... _Mfargs,
+	class _Obj,
+	class... _Args>
+	struct _Result_of<_Ret (_Ty::*)(_Mfargs...), _Obj, _Args...>
+	{	// template to determine result of call operation
+		// on pointer to member function
+	typedef _Ret _Type;
+	};
+
+template <class _Ret,
+	class _Ty,
+	class... _Mfargs,
+	class _Obj,
+	class... _Args>
+	struct _Result_of<_Ret (_Ty::*)(_Mfargs...) const, _Obj, _Args...>
+	{	// template to determine result of call operation
+		// on pointer to member function
+	typedef _Ret _Type;
+	};
+
+template <class _Ret,
+	class _Ty,
+	class... _Mfargs,
+	class _Obj,
+	class... _Args>
+	struct _Result_of<_Ret (_Ty::*)(_Mfargs...) volatile, _Obj, _Args...>
+	{	// template to determine result of call operation
+		// on pointer to member function
+	typedef _Ret _Type;
+	};
+
+template <class _Ret,
+	class _Ty,
+	class... _Mfargs,
+	class _Obj,
+	class... _Args>
+	struct _Result_of<_Ret (_Ty::*)(_Mfargs...) const volatile, _Obj,
+		_Args...>
+	{	// template to determine result of call operation
+		// on pointer to member function
+	typedef _Ret _Type;
+	};
+
+template <class _Ret,
+	class _Ty,
+	class... _Mfargs,
+	class _Obj,
+	class... _Args>
+	struct _Result_of<_Ret (_Ty::* const)(_Mfargs...), _Obj, _Args...>
+	{	// template to determine result of call operation
+		// on pointer to member function
+	typedef _Ret _Type;
+	};
+
+template <class _Ret,
+	class _Ty,
+	class... _Mfargs,
+	class _Obj,
+	class... _Args>
+	struct _Result_of<_Ret (_Ty::* const)(_Mfargs...) const, _Obj, _Args...>
+	{	// template to determine result of call operation
+		// on pointer to member function
+	typedef _Ret _Type;
+	};
+
+template <class _Ret,
+	class _Ty,
+	class... _Mfargs,
+	class _Obj,
+	class... _Args>
+	struct _Result_of<_Ret (_Ty::* const)(_Mfargs...) volatile, _Obj,
+		_Args...>
+	{	// template to determine result of call operation
+		// on pointer to member function
+	typedef _Ret _Type;
+	};
+
+template <class _Ret,
+	class _Ty,
+	class... _Mfargs,
+	class _Obj,
+	class... _Args>
+	struct _Result_of<_Ret (_Ty::* const)(_Mfargs...) const volatile, _Obj,
+		_Args...>
+	{	// template to determine result of call operation
+		// on pointer to member function
+	typedef _Ret _Type;
+	};
+
+template <class _Ret,
+	class _Ty,
+	class _Obj,
+	class... _Args>
+	struct _Result_of<_Ret _Ty::*, _Obj, _Args...>
+	{	// template to determine result of call operation
+		// on pointer to member data
+	typedef _Ret& _Type;
+	};
+
+template <class _Ret,
+	class _Ty,
+	class _Obj,
+	class... _Args>
+	struct _Result_of<_Ret _Ty::*, const _Obj, _Args...>
+	{	// template to determine result of call operation
+		// on pointer to member data
+	typedef const _Ret& _Type;
+	};
+
+template <class _Ret,
+	class _Ty,
+	class _Obj,
+	class... _Args>
+	struct _Result_of<_Ret _Ty::* const, _Obj, _Args...>
+	{	// template to determine result of call operation
+		// on pointer to member data
+	typedef _Ret& _Type;
+	};
+
+template <class _Ret,
+	class _Ty,
+	class _Obj,
+	class... _Args>
+	struct _Result_of<_Ret _Ty::* const, const _Obj, _Args...>
+	{	// template to determine result of call operation
+		// on pointer to member data
+	typedef const _Ret& _Type;
+	};
+
+template <class _Ret,
+	class... _Fun_args,
+	class... _Args>
+	struct _Result_of<_Ret (*)(_Fun_args...), _Args...>
+	{	// template to determine result of call operation on ptr to function
+	typedef _Ret _Type;
+	};
+
+template<class _Fty>
+	struct result_of;	// not defined
+
+template<class _Fty,
+	class... _Args>
+	struct result_of<_Fty(_Args...)>
+	{	// template to determine result of call operation
+	typedef typename _Result_of<_Fty, _Args...>::_Type type;
+	};
+
+template<class _Fty,
+	class... _Args>
+	struct result_of<reference_wrapper<_Fty>(_Args...)>
+	{	// template to determine result of call operation
+	typedef typename _Result_of<_Fty, _Args...>::_Type type;
+	};
+
+ #else /* _HAS_VARIADIC_TEMPLATES */
+	// TEMPLATE STRUCT _Result_of
+template<class _Ty>
+	struct _Result_of;
+
+ #define _INCL_FILE_xxresult
+ #include <xfwrap>
+
+	// TEMPLATE STRUCT result_of
+template<class _Fty>
+	struct result_of
+	{	// template to determine result of call operation
+	typedef typename _Result_of<_Fty>::_Type type;
+	};
+ #endif /* _HAS_VARIADIC_TEMPLATES */
+
+// SUPPORT CLASSES FOR CALL WRAPPERS
+
+	// TEMPLATE STRUCT _Pmd_caller
+template<class _Ret,
+	class _Arg0>
+	struct _Pmd_caller
+	{	// bind object and pointer to member data
+	template<class _Pmd,
+		class _Farg0>
+		static _Ret _Call_pmd(const volatile _Arg0*, _Pmd _Pm, _Farg0 _F0)
+		{	// apply to object
+		return ((_Ret)(_F0.*_Pm));
+		}
+
+	template<class _Pmd,
+		class _Farg0>
+		static _Ret _Call_pmd(const volatile void *, _Pmd _Pm, _Farg0 _F0)
+		{	// apply to smart pointer of type _Farg0
+		return ((*_F0).*_Pm);
+		}
+
+	template<class _Pmd,
+		class _Farg0>
+		static _Ret _Apply_pmd(_Pmd _Pm, _Farg0& _F0)
+		{	// apply to object
+		return (_Call_pmd<_Pmd, _Farg0&>(&_F0, _Pm, _F0));
+		}
+
+	template<class _Pmd,
+		class _Farg0>
+		static _Ret _Apply_pmd(_Pmd _Pm, _Farg0 *_F0)
+		{	// apply to pointer to object
+		return (_Call_pmd<_Pmd, _Farg0&>(_F0, _Pm, *_F0));
+		}
+	};
+
+	// TEMPLATE STRUCT _Callable_base
+template<class _Ty,
+	bool _Indirect>
+	struct _Callable_base;
+
+template<class _Ty>
+	struct _Callable_base<_Ty, false>
+	{	// base types for callable object wrappers
+	typedef _Ty _MyTy;
+	typedef const _Ty& _MyCnstTy;
+
+	_Callable_base(_Ty& _Val)
+		: _Object(_Val)
+		{	// construct
+		}
+
+	const _Ty& _Get() const
+		{	// return reference to stored object
+		return (_Object);
+		}
+
+	_Ty& _Get()
+		{	// return reference to stored object
+		return (_Object);
+		}
+
+private:
+	_Callable_base& operator=(const _Callable_base&);
+
+	_Ty _Object;
+};
+
+template<class _Ty>
+	struct _Callable_base<_Ty, true>
+	{	// base types for callable object wrappers holding references
+		// (used by reference_wrapper)
+
+	typedef _Ty _MyTy;
+	typedef _Ty& _MyCnstTy;
+
+	_Callable_base(_Ty& _Val)
+		: _Ptr(&_Val)
+		{	// construct
+		}
+
+	_MyCnstTy _Get() const
+		{	// return reference to stored object
+		return (*_Ptr);
+		}
+
+	_Ty& _Get()
+		{	// return reference to stored object
+		return (*_Ptr);
+		}
+
+	void _Reset(_Ty& _Val)
+		{	// reseat reference
+		_Ptr = &_Val;
+		}
+
+private:
+	_Ty *_Ptr;
+};
+
+	// TEMPLATE STRUCT _Callable_pmd
+template<class _Ty,
+	class _Memty,
+	bool _Indirect = false>
+	struct _Callable_pmd
+		: _Callable_base<_Ty, _Indirect>
+	{	// wrap pointer to member data
+	_Callable_pmd(_Ty& _Val)
+		: _Callable_base<_Ty, _Indirect>(_Val)
+		{	// construct
+		}
+
+	template<class _Ret,
+		class _Arg0>
+		_Ret _ApplyX(_Arg0& _A0) const
+		{	// apply
+		return (_Pmd_caller<_Ret, _Memty>::_Apply_pmd(this->_Get(), _A0));
+		}
+	};
+
+	// TEMPLATE STRUCT _Callable_obj
+template<class _Ty,
+	bool _Indirect = false>
+	struct _Callable_obj
+		: _Callable_base<_Ty, _Indirect>
+	{	// wrap function object
+	_Callable_obj(_Ty& _Val)
+		: _Callable_base<_Ty, _Indirect>(_Val)
+		{	// construct
+		}
+
+ #if _HAS_VARIADIC_TEMPLATES
+template<class _Ret,
+	class... _Types>
+	_Ret _ApplyX(_Types&... _Args) const
+	{ // apply to UDT object
+	return (this->_Get()(_Args...));
+	}
+
+template<class _Ret,
+	class... _Types>
+	_Ret _ApplyX(_Types&... _Args)
+	{ // apply to UDT object
+	return (this->_Get()(_Args...));
+	}
+
+ #else /* _HAS_VARIADIC_TEMPLATES */
+ #define _INCL_FILE_xxcallobj
+ #include <xfwrap>
+ #endif /* _HAS_VARIADIC_TEMPLATES */
+	};
+
+	// TEMPLATE STRUCT _Pmf_caller
+
+ #if _HAS_VARIADIC_TEMPLATES
+template<class _Ty>
+	class reference_wrapper;
+
+template<class _Ret,
+	class _Arg0>
+	struct _Pmf_caller
+	{	// bind object and pointer to member function
+	typedef _Arg0 _Funobj;
+
+// apply to pointer to member function
+	template<class _Pmf,
+		class _Farg0,
+		class... _Ftypes>
+		static _Ret _Call_pmf(const volatile
+			reference_wrapper<typename _Remove_reference<_Arg0>::_Type> *,
+				_Pmf _Pm, _Farg0 _Fx0, _Ftypes... _Fargs)
+		{	// apply to reference_wrapper
+		typedef typename _Copy_cv<_Arg0, _Farg0>::_Type
+			_Funobj_cv;
+		return (((_Funobj_cv)_Fx0.*_Pm)(_Fargs...));
+		}
+
+	template<class _Pmf,
+		class _Farg0,
+		class... _Ftypes>
+		static _Ret _Call_pmf(
+			const volatile typename _Remove_reference<_Arg0>::_Type *,
+				_Pmf _Pm, _Farg0 _Fx0, _Ftypes... _Fargs)
+		{	// apply to reference to an object
+		typedef typename _Copy_cv<_Arg0, _Farg0>::_Type
+			_Funobj_cv;
+		return (((_Funobj_cv)_Fx0.*_Pm)(_Fargs...));
+		}
+
+	template<class _Pmf,
+		class _Farg0,
+		class... _Ftypes>
+		static _Ret _Call_pmf(
+			const volatile typename _Remove_reference<_Arg0>::_Type&,
+				_Pmf _Pm, _Farg0 _Fx0, _Ftypes... _Fargs)
+		{	// apply to pointer to an object
+		return ((_Fx0.*_Pm)(_Fargs...));
+		}
+
+	template<class _Pmf,
+		class _Farg0,
+		class... _Ftypes>
+		static _Ret _Call_pmf(const volatile void *,
+			_Pmf _Pm, _Farg0 _Fx0, _Ftypes... _Fargs)
+		{	// apply to smart pointer of type _Farg0
+		return (((*_Fx0).*_Pm)(_Fargs...));
+		}
+
+	template<class _Pmf,
+		class _Farg0,
+		class... _Ftypes>
+		static _Ret _Apply_pmf(_Pmf _Pm, _Farg0& _Fx0, _Ftypes&... _Fargs)
+		{	// apply to reference to an object
+		return (_Call_pmf<_Pmf, _Farg0&, _Ftypes&...>(&_Fx0, _Pm,
+			_Fx0, _Fargs...));
+		}
+
+	template<class _Pmf,
+		class _Farg0,
+		class... _Ftypes>
+		static _Ret _Apply_pmf(_Pmf _Pm, _Farg0 *_Fx0, _Ftypes&... _Fargs)
+		{	// apply to pointer to an object
+		return (_Call_pmf<_Pmf, _Farg0&, _Ftypes&...>(_Fx0, _Pm,
+			*_Fx0, _Fargs...));
+		}
+	};
+
+ #else /* _HAS_VARIADIC_TEMPLATES */
+ #define _INCL_FILE_xxpmfcaller
+ #include <xfwrap>
+ #endif /* _HAS_VARIADIC_TEMPLATES */
+
+	// TEMPLATE STRUCT _Callable_pmf
+template<class _Ty,
+	class _Memty,
+	bool _Indirect = false>
+	struct _Callable_pmf
+		: _Callable_base<_Ty, _Indirect>
+	{	// wrap pointer to member function
+	_Callable_pmf(_Ty& _Val)
+		: _Callable_base<_Ty, _Indirect>(_Val)
+		{	// construct
+		}
+
+ #if _HAS_VARIADIC_TEMPLATES
+template<class _Ret,
+	class... _Types>
+	_Ret _ApplyX(_Types&... _Args) const
+	{ // call pointer to member function
+	return (_Pmf_caller<_Ret, _Memty>::
+		_Apply_pmf(this->_Get(), _Args...));
+	}
+
+ #else /* _HAS_VARIADIC_TEMPLATES */
+ #define _INCL_FILE_xxcallpmf
+ #include <xfwrap>
+ #endif /* _HAS_VARIADIC_TEMPLATES */
+	};
+
+	// TEMPLATE STRUCT _Callable_fun
+template<class _Ty,
+	bool _Indirect = false>
+	struct _Callable_fun
+		: _Callable_base<_Ty, _Indirect>
+	{	// wrap pointer to function
+	_Callable_fun(_Ty& _Val)
+		: _Callable_base<_Ty, _Indirect>(_Val)
+		{	// construct
+		}
+
+ #if _HAS_VARIADIC_TEMPLATES
+template<class _Ret,
+	class... _Types>
+	_Ret _ApplyX(_Types&... _Args) const
+	{ // call pointer to function
+	return (this->_Get()(_Args...));
+	}
+
+ #else /* _HAS_VARIADIC_TEMPLATES */
+ #define _INCL_FILE_xxcallfun
+ #include <xfwrap>
+ #endif /* _HAS_VARIADIC_TEMPLATES */
+	};
+
+	// TEMPLATE STRUCT _Call_wrapper_base
+template<class _Callable>
+	struct _Call_wrapper_base
+	{	// wrap callable object
+	typedef typename _Callable::_MyTy _MyTy;
+	typedef typename _Callable::_MyCnstTy _MyCnstTy;
+
+	_Call_wrapper_base(_MyTy& _Val)
+		: _Callee(_Val)
+		{	// construct
+		}
+
+	void _Reset(_MyTy& _Val)
+		{	// reset
+		_Callee._Reset(_Val);
+		}
+
+	_MyCnstTy _Get() const
+		{	// get
+		return (_Callee._Get());
+		}
+
+	_MyCnstTy _Get()
+		{	// get
+		return (_Callee._Get());
+		}
+
+	_Callable _Callee;
+	};
+
+	// TEMPLATE STRUCT _Call_wrapper
+template<class _Callable>
+	struct _Call_wrapper
+	: _Call_wrapper_base<_Callable>
+	{	// wrap callable object
+	typedef _Call_wrapper_base<_Callable> _Mybase;
+
+	_Call_wrapper(typename _Call_wrapper_base<_Callable>::_MyTy& _Val)
+		: _Call_wrapper_base<_Callable>(_Val)
+		{	// construct
+		}
+
+ #if _HAS_VARIADIC_TEMPLATES
+template<class... _Types>
+	typename result_of<typename _Callable::_MyTy(_Types&...)>::type
+		operator()(_Types _REFREF... _Args) const
+	{ // call target object
+	typedef typename result_of<
+		typename _Callable::_MyTy(_Types&...)>::type _Ret;
+	return (_Mybase::_Callee.template _ApplyX<_Ret>(_Args...));
+	}
+
+ #else /* _HAS_VARIADIC_TEMPLATES */
+ #define _INCL_FILE_xxcallwrap
+ #include <xawrap>
+ #endif /* _HAS_VARIADIC_TEMPLATES */
+	};
+
+	// FUNCTION _Has_result_and_arg_type
+template<class _Ty>
+	_No _Has_result_and_arg_type(const volatile void *);
+
+template<class _Ty>
+	_Yes _Has_result_and_arg_type(_Ty *,
+		typename _Ty::argument_type * = 0, typename _Ty::result_type * = 0);
+
+#define _HAS_RESULT_AND_ARG_TYPE(_Ty) \
+	_IS_YES(_STD tr1::_Has_result_and_arg_type<_Ty>((_Ty *)0))
+
+	// FUNCTION _Has_result_and_2arg_type
+template<class _Ty>
+	_No _Has_result_and_2arg_type(const volatile void *);
+
+template<class _Ty>
+	_Yes _Has_result_and_2arg_type(_Ty *,
+		typename _Ty::first_argument_type * = 0,
+		typename _Ty::second_argument_type * = 0,
+		typename _Ty::result_type * = 0);
+
+#define _HAS_RESULT_AND_2ARG_TYPE(_Ty) \
+	_IS_YES(_STD tr1::_Has_result_and_2arg_type<_Ty>((_Ty *)0))
+
+	// FUNCTION _Has_unary_base
+template<class _T1,
+	class _Ret>
+	_No _Has_unary_base(const volatile void *);
+
+template<class _T1,
+	class _Ret>
+	_Yes _Has_unary_base(const volatile unary_function<_T1, _Ret> *);
+
+#define _HAS_UNARY_BASE(_Ty) \
+	_IS_YES((_Has_unary_base<typename _Ty::argument_type, \
+		typename _Ty::result_type>((_Ty *)0)))
+
+	// FUNCTION _Has_binary_base
+template<class _T1,
+	class _T2,
+	class _Ret>
+	_No _Has_binary_base(const volatile void *);
+
+template<class _T1,
+	class _T2,
+	class _Ret>
+	_Yes _Has_binary_base(const volatile binary_function<_T1, _T2, _Ret> *);
+
+#define _HAS_BINARY_BASE(_Ty) \
+	_IS_YES((_Has_binary_base<typename _Ty::first_argument_type, \
+		typename _Ty::second_argument_type, \
+			typename _Ty::result_type>((_Ty *)0)))
+
+	// TEMPLATE CLASS _Refwrap_result0
+template<class _Ty,
+	bool>
+	struct _Refwrap_result0
+	{	// define result_type when target object defines it
+	typedef typename _Ty::result_type result_type;
+	};
+
+template<class _Ty>
+	struct _Refwrap_result0<_Ty, false>
+	{	// no result_type when not defined by target object
+	};
+
+// TEMPLATE CLASS _Refwrap_result1_helper
+template<class _Ty,
+	bool>
+	struct _Refwrap_result1_helper
+		: _Refwrap_result0<_Ty, _HAS_RESULT_TYPE(_Ty)>
+	{	// select _Refwrap_result0 specialization
+	};
+
+template<class _Ty>
+	struct _Refwrap_result1_helper<_Ty, true>
+		: unary_function<typename _Ty::argument_type,
+			typename _Ty::result_type>
+	{	// derive from unary_function
+	};
+
+	// TEMPLATE CLASS _Refwrap_result1
+template<class _Ty,
+	bool>
+	struct _Refwrap_result1
+		: _Refwrap_result0<_Ty, _HAS_RESULT_TYPE(_Ty)>
+	{	// select base for type without typedefs for result and one argument
+	};
+
+template<class _Ty>
+	struct _Refwrap_result1<_Ty, true>
+		: _Refwrap_result1_helper<_Ty, _HAS_UNARY_BASE(_Ty)>
+	{	// select base for type with typedefs for result and one argument
+	};
+
+	// TEMPLATE CLASS _Refwrap_result2_helper
+template<class _Ty,
+	bool>
+	struct _Refwrap_result2_helper
+		: _Refwrap_result1<_Ty, _HAS_RESULT_AND_ARG_TYPE(_Ty)>
+	{	// select base
+	};
+
+template<class _Ty>
+	struct _Refwrap_result2_helper<_Ty, true>
+		: binary_function<typename _Ty::first_argument_type,
+				typename _Ty::second_argument_type,
+			typename _Ty::result_type>,
+				_Refwrap_result1<_Ty, _HAS_RESULT_AND_ARG_TYPE(_Ty)>
+	{	// base for type derived from binary_function
+	};
+
+	// TEMPLATE CLASS _Refwrap_result2
+template<class _Ty,
+	bool>
+	struct _Refwrap_result2
+		: _Refwrap_result1<_Ty, _HAS_RESULT_AND_ARG_TYPE(_Ty)>
+	{	// select base for type without typedefs for result and two arguments
+	};
+
+template<class _Ty>
+	struct _Refwrap_result2<_Ty, true>
+		: _Refwrap_result2_helper<_Ty, _HAS_BINARY_BASE(_Ty)>
+	{	// select base for type with typedefs for result and two arguments
+	};
+
+	// TEMPLATE CLASS _Refwrap_impl
+template<class _Ty>
+	struct _Refwrap_impl
+		: _Call_wrapper<_Callable_obj<_Ty, true> >,
+			_Refwrap_result2<_Ty, _HAS_RESULT_AND_2ARG_TYPE(_Ty)>
+	{	// reference_wrapper implementation for UDT
+	_Refwrap_impl(_Ty& _Val)
+		: _Call_wrapper<_Callable_obj<_Ty, true> >(_Val)
+		{	// construct
+		}
+	};
+
+template<class _Rx,
+	class _Arg0>
+	struct _Refwrap_impl<_Rx _Arg0::*>
+		: _Call_wrapper<_Callable_pmd<_Rx _Arg0::*const, _Arg0, false> >
+	{	// reference_wrapper implementation for pointer to member data
+	typedef _Rx _Arg0::*const _Fty;
+	typedef _Rx result_type;
+
+	_Refwrap_impl(_Fty _Val)
+		: _Call_wrapper<_Callable_pmd<_Fty, _Arg0, false> >(_Val)
+		{	// construct
+		}
+	};
+
+template<class _Rx,
+	class _Arg0>
+	struct _Refwrap_impl<_Rx _Arg0::*const>
+		: _Call_wrapper<_Callable_pmd<_Rx _Arg0::*, _Arg0, false> >
+	{	// reference_wrapper implementation for const pointer to member data
+	typedef _Rx _Arg0::*_Fty;
+	typedef _Rx result_type;
+	_Refwrap_impl(_Fty _Val)
+		: _Call_wrapper<_Callable_pmd<_Fty, _Arg0, false> >(_Val)
+		{	// construct
+		}
+	};
+
+	// TEMPLATE CLASS _Refwrap_impl
+
+ #if _HAS_VARIADIC_TEMPLATES
+ #include <xvrefwrap>
+
+ #else /* _HAS_VARIADIC_TEMPLATES */
+ #define _INCL_FILE_xxrefwrap
+ #include <xfwrap>
+ #endif /* _HAS_VARIADIC_TEMPLATES */
+
+	// TEMPLATE CLASS reference_wrapper
+template<class _Ty>
+	class reference_wrapper
+	: public _Refwrap_impl<_Ty>
+	{	// stand-in for an assignable reference
+public:
+	typedef _Refwrap_impl<_Ty> _MyBase;
+	typedef _Ty type;
+
+	reference_wrapper(_Ty& _Val)
+		: _MyBase(_Val)
+		{	// construct
+		}
+
+	operator _Ty&() const
+		{	// return reference
+		return (this->_Get());
+		}
+
+	_Ty& get() const
+		{	// return reference
+		return (this->_Get());
+		}
+	};
+
+	// TEMPLATE FUNCTIONS ref AND cref
+template<class _Ty>
+	reference_wrapper<_Ty> ref(_Ty& _Val)
+	{	// create reference_wrapper<_Ty> object
+	return (reference_wrapper<_Ty>(_Val));
+	}
+
+ #if _HAS_RVALUE_REFERENCES
+template<class _Ty>
+	void ref(const _Ty&& _Val);	// not defined
+ #endif /* _HAS_RVALUE_REFERENCES */
+
+template<class _Ty>
+	reference_wrapper<_Ty> ref(reference_wrapper<_Ty> _Val)
+	{	// create reference_wrapper<_Ty> object
+	return (_Val);
+	}
+
+template<class _Ty>
+	reference_wrapper<const _Ty> cref(const _Ty& _Val)
+	{	// create reference_wrapper<const _Ty> object
+	return (reference_wrapper<const _Ty>(_Val));
+	}
+
+ #if _HAS_RVALUE_REFERENCES
+//template<class _Ty>
+//	void cref(const _Ty&& _Val);	// not defined
+ #endif /* _HAS_RVALUE_REFERENCES */
+
+template<class _Ty>
+	reference_wrapper<const _Ty> cref(reference_wrapper<const _Ty> _Val)
+	{	// create reference_wrapper<const _Ty> object
+	return (_Val);
+	}
+	}	// namespace tr1
+_STD_END
+#endif /* _XREFWRAP_ */
+
+/*
+ * Copyright (c) 1992-2010 by P.J. Plauger.  ALL RIGHTS RESERVED.
+ * Consult your license regarding permissions and restrictions.
+V5.30:0009 */

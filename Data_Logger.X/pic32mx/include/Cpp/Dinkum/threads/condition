@@ -1,0 +1,106 @@
+// condition header for threads library
+#ifndef _DINKUM_THREADS_CONDITION
+#define _DINKUM_THREADS_CONDITION
+#include <Dinkum/threads/xthrcommon.h>
+#include <Dinkum/threads/xthreads.h>
+#include <Dinkum/threads/xtime>
+#include <Dinkum/threads/exceptions>
+
+namespace Dinkum
+	{	// Dinkum Libraries
+	namespace threads
+		{	// Dinkum C++ Threads Library
+
+class condition
+	{	// condition variables
+public:
+	condition()
+		{	// construct
+		_Validate(_Cnd_init(&cond));
+		}
+
+	~condition()
+		{	// destroy
+		_Cnd_destroy(&cond);
+		}
+
+	void notify_one()
+		{	// release up to one blocked thread
+		_Validate(_Cnd_signal(&cond));
+		}
+
+	void notify_all()
+		{	// release all blocked threads
+		_Validate(_Cnd_broadcast(&cond));
+		}
+
+	template<class scopedlock>
+		void wait(scopedlock& lock)
+			{	// block until signalled
+			if (!lock)
+				_Throw_lock_error();
+			_Validate(_Cnd_wait(&cond, &lock._My_lock._Mtx._Mtx));
+			}
+
+	template<class scopedlock,
+		class predicate>
+		void wait(scopedlock& lock, predicate pred)
+			{	// block until signalled and pred is true
+			if (!lock)
+				_Throw_lock_error();
+			while (!pred())
+				_Validate(_Cnd_wait(&cond, &lock._My_lock._Mtx._Mtx));
+			}
+
+	template<class scopedlock>
+		bool timed_wait(scopedlock& lock, const xtime& xt)
+			{	// block until signalled, or until time xt
+			if (!lock)
+				_Throw_lock_error();
+			return _Validate(_Cnd_timedwait(&cond,
+				&lock._My_lock._Mtx._Mtx, &xt)) == thrd_success;
+				}
+
+	template<class scopedlock,
+		class predicate>
+		bool timed_wait(scopedlock& lock, const xtime& xt, predicate pred)
+			{	// block until signalled and pred is true, or until time xt
+			if (!lock)
+				_Throw_lock_error();
+			int res = thrd_success;
+			while (!pred() && res == thrd_success)
+				res = _Validate(_Cnd_timedwait(&cond,
+					&lock._My_lock._Mtx._Mtx, &xt));
+			return res == thrd_success;
+			}
+
+	private:
+		_Cnd_t cond;
+
+		condition(const condition&);	// not implemented
+		condition& operator=(const condition&);	// not implemented
+	};
+		}	// namespace threads
+	}	// namespace Dinkum
+#endif /* _DINKUM_THREADS_CONDITION */
+
+/*
+ * This file is derived from software bearing the following
+ * restrictions:
+ *
+ * (c) Copyright William E. Kempf 2001
+ *
+ * Permission to use, copy, modify, distribute and sell this
+ * software and its documentation for any purpose is hereby
+ * granted without fee, provided that the above copyright
+ * notice appear in all copies and that both that copyright
+ * notice and this permission notice appear in supporting
+ * documentation. William E. Kempf makes no representations
+ * about the suitability of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ */
+
+/*
+ * Copyright (c) 1992-2010 by P.J. Plauger.  ALL RIGHTS RESERVED.
+ * Consult your license regarding permissions and restrictions.
+V5.30:0009 */

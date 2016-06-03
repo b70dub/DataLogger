@@ -16,7 +16,21 @@
 *******************************************************************************/
 
 #include <plib.h>
-#define GetSystemClock() (40000000UL)/* Fcy = 40MHz */
+
+/*********************************************************************
+* Macro: #define GetSystemClock() returns system clock frequency in Hertz. Value is 8 MHz/2 x 18 PLL for PIC32
+*
+* Macro: #define GetPeripheralClock() returns peripheral clock frequency.
+*
+* Macro: #define GetInstructionClock() returns instruction clock frequency.
+*
+********************************************************************/
+
+//#define GetSystemClock() (40000000UL)/* Fcy = 40MHz */
+#define GetSystemClock()        (80000000ul) //pic32 runs at 80mHz
+#define GetPeripheralClock()    (GetSystemClock() / (1 << OSCCONbits.PBDIV))
+#define GetInstructionClock()   (GetSystemClock())
+
 #define us_SCALE   (GetSystemClock()/2000000)
 #define ms_SCALE   (GetSystemClock()/2000)
 

@@ -1,0 +1,25 @@
+// xxtuple0 internal header
+// NOTE: no include guard
+
+ #if _NARGS != 0
+
+ #if _HAS_RVALUE_REFERENCES
+template<_CLASS_FARG0>
+	explicit tuple(_FARG0_F0_REFREF)
+	: _Impl(_F0_F1_FWD _C_TAIL(_Nil_obj))
+	{	// construct from one or more arguments
+	}
+
+ #else /* _HAS_RVALUE_REFERENCES */
+explicit tuple(_LIST2(typename _Arg_traits<_Arg, >::_AType _Ax))
+	: _Impl(_A0_A1 _C_TAIL(_Nil_obj))
+	{	// construct from one or more arguments
+	}
+ #endif /* _HAS_RVALUE_REFERENCES */
+
+ #endif /* _NARGS != 0 */
+
+/*
+ * Copyright (c) 1992-2010 by P.J. Plauger.  ALL RIGHTS RESERVED.
+ * Consult your license regarding permissions and restrictions.
+V5.30:0009 */

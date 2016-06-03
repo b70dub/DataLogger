@@ -1,0 +1,517 @@
+// xvtuple internal header for variadic templates
+// NOTE: no include guard
+
+	// CLASS _Crefify
+template<class _Type>
+	struct _Crefify
+	{	// make a const reference from arbitrary type
+	typedef const _Type& type;
+	};
+
+template<class _Type>
+	struct _Crefify<_Type&>
+	{	// make a const reference from a reference
+	typedef _Type& type;
+	};
+
+	// CLASS _Refify
+template<class _Type>
+	struct _Refify
+	{	// make a reference from arbitrary type
+	typedef _Type& type;
+	};
+
+template<class _Type>
+	struct _Refify<_Type&>
+	{	// make a reference from a reference
+	typedef _Type& type;
+	};
+
+	// CLASS _Ignore
+class _Ignore
+	{	// class that ignores assignments
+public:
+	_Ignore()
+		{	// construct
+		}
+
+	template<class _Ty>
+		void operator=(const _Ty&) const
+		{	// do nothing
+		}
+	};
+
+const _Ignore ignore;
+
+	// CLASS tuple
+template<class... _Types>
+	class tuple;
+
+template<>
+	class tuple<>
+	{	// empty tuple
+public:
+	typedef tuple<> _Mytype;
+
+	void swap(_Mytype& _Right)
+		{	// swap elements
+		}
+
+	bool _Equals(const _Mytype& _Right) const
+		{	// test if *this == _Right
+		return (true);
+		}
+
+	bool _Less(const _Mytype& _Right) const
+		{	// test if *this < _Right
+		return (false);
+		}
+	};
+
+template<class _This, class... _Rest>
+	class tuple<_This, _Rest...>
+		: public tuple<_Rest...>
+	{	// recursive tuple definition
+public:
+	typedef _This _This_type;
+	typedef tuple<_This, _Rest...> _Mytype;
+	typedef tuple<_Rest...> _Mybase;
+
+	tuple()
+		: _Mybase(), _Myfirst()
+		{	// construct default
+		}
+
+	tuple(const _Mytype& _Right)
+		: _Mybase(_Right._Get_rest()), _Myfirst(_Right._Myfirst)
+		{	// construct by copying
+		}
+
+	template<class... _Other>
+		tuple(const tuple<_Other...>& _Right)
+		: _Mybase(_Right._Get_rest()), _Myfirst(_Right._Myfirst)
+		{	// construct by copying same size tuple
+		}
+
+	template<class _First, class _Second>
+		tuple(const _STD pair<_First, _Second>& _Right)
+		: _Mybase(tuple<_Second>(_Right.second)), _Myfirst(_Right.first)
+		{	// construct by copying pair
+		}
+
+	explicit tuple(typename _Crefify<_This>::type _This_arg,
+		typename _Crefify<_Rest>::type... _Rest_arg)
+		: _Mybase(_Rest_arg...), _Myfirst(_This_arg)
+		{	// construct from elements
+		}
+
+	_Mytype& operator=(const _Mytype& _Right)
+		{	// assign
+		_Myfirst = _Right._Myfirst;
+		*(_Mybase *)this = _Right._Get_rest();
+		return (*this);
+		}
+
+	template<class... _Other>
+		_Mytype& operator=(const tuple<_Other...>& _Right)
+		{	// assign same size tuple
+		_Myfirst = _Right._Myfirst;
+		*(_Mybase *)this = _Right._Get_rest();
+		return (*this);
+		}
+
+	template<class _First, class _Second>
+		_Mytype& operator=(const _STD pair<_First, _Second>& _Right)
+		{	// assign pair
+		_Myfirst = _Right.first;
+		*(_Mybase *)this = tuple<_Second>(_Right.second);
+		return (*this);
+		}
+
+ #if _HAS_RVALUE_REFERENCES
+	tuple(_Mytype&& _Right)
+		: _Mybase(_STD forward<_Mybase>(_Right._Get_rest())),
+			_Myfirst(_STD forward<_This>(_Right._Myfirst))
+		{	// construct by moving
+		}
+
+	template<class... _Other>
+		tuple(tuple<_Other...>& _Right)
+		: _Mybase(_Right._Get_rest()),
+			_Myfirst(_Right._Myfirst)
+		{	// construct by forwardinging same size tuple
+		}
+
+	template<class... _Other>
+		tuple(tuple<_Other...>&& _Right)
+		: _Mybase(_STD forward<typename tuple<_Other...>::_Mybase>
+			(_Right._Get_rest())),
+			_Myfirst(_STD forward<typename tuple<_Other...>::_This_type>
+				(_Right._Myfirst))
+		{	// construct by moving same size tuple
+		}
+
+	template<class _First, class _Second>
+		tuple(_STD pair<_First, _Second>& _Right)
+		: _Mybase(tuple<_Second>(_Right.second)),
+			_Myfirst(_Right.first)
+		{	// construct by forwarding pair
+		}
+
+	template<class _First, class _Second>
+		tuple(_STD pair<_First, _Second>&& _Right)
+		: _Mybase(tuple<_Second>(_STD forward<_Second>(_Right.second))),
+			_Myfirst(_STD forward<_First>(_Right.first))
+		{	// construct by moving pair
+		}
+
+	template<class _This2, class... _Rest2>
+		explicit tuple(_This2&& _This_arg, _Rest2&&... _Rest_arg)
+			: _Mybase(_STD forward<_Rest2>(_Rest_arg)...),
+				_Myfirst(_STD forward<_This2>(_This_arg))
+		{	// construct from moved elements
+		}
+
+	_Mytype& operator=(_Mytype&& _Right)
+		{	// assign by moving
+		_Myfirst = _STD forward<_This>(_Right._Myfirst);
+		*(_Mybase *)this = _STD forward<_Mybase>(_Right._Get_rest());
+		return (*this);
+		}
+
+	template<class... _Other>
+		_Mytype& operator=(tuple<_Other...>& _Right)
+		{	// assign by copying same size tuple
+		_Myfirst = _Right._Myfirst;
+		*(_Mybase *)this = _Right._Get_rest();
+		return (*this);
+		}
+
+	template<class... _Other>
+		_Mytype& operator=(tuple<_Other...>&& _Right)
+		{	// assign by moving same size tuple
+		_Myfirst = _STD forward<typename tuple<_Other...>::_This_type>
+			(_Right._Myfirst);
+		*(_Mybase *)this = _STD forward<typename tuple<_Other...>::_Mybase>
+			(_Right._Get_rest());
+		return (*this);
+		}
+
+	template<class _First, class _Second>
+		_Mytype& operator=(_STD pair<_First, _Second>& _Right)
+		{	// assign by copying pair
+		_Myfirst = _Right.first;
+		*(_Mybase *)this = tuple<_Second>(_Right.second);
+		return (*this);
+		}
+
+	template<class _First, class _Second>
+		_Mytype& operator=(_STD pair<_First, _Second>&& _Right)
+		{	// assign by moving pair
+		_Myfirst = _STD forward<_First>(_Right.first);
+		*(_Mybase *)this =
+			tuple<_Second>(_STD forward<_Second>(_Right.second));
+		return (*this);
+		}
+ #endif /* _HAS_RVALUE_REFERENCES */
+
+	_Mybase& _Get_rest()
+		{	// get reference to rest of elements
+		return (*this);
+		}
+
+	const _Mybase& _Get_rest() const
+		{	// get const reference to rest of elements
+		return (*this);
+		}
+
+	void swap(tuple& _Right)
+		{	// test if *this == _Right
+		_Swap_adl(_Myfirst, _Right._Myfirst);
+		(*(_Mybase *)this)->swap(*(_Mybase *)&_Right);
+		}
+
+	template<class... _Other>
+		bool _Equals(const tuple<_Other...>& _Right) const
+		{	// test if *this == _Right
+		return (_Myfirst == _Right._Myfirst
+			&& ((_Mybase *)this)->_Equals(_Right._Get_rest()));
+		}
+
+	template<class... _Other>
+		bool _Less(const tuple<_Other...>& _Right) const
+		{	// test if *this < _Right
+		return (_Myfirst < _Right._Myfirst
+			|| !(_Right._Myfirst < _Myfirst)
+				&& ((_Mybase *)this)->_Less(_Right._Get_rest()));
+		}
+
+	_This _Myfirst;	// the stored element
+	};
+
+	// OPERATORS FOR tuple
+template<class... _Types1,
+	class... _Types2> inline
+	bool operator==(const tuple<_Types1...>& _Left,
+		const tuple<_Types2...>& _Right)
+	{	// test if _Left == _Right
+	return (_Left._Equals(_Right));
+	}
+
+template<class... _Types1,
+	class... _Types2> inline
+	bool operator!=(const tuple<_Types1...>& _Left,
+		const tuple<_Types2...>& _Right)
+	{	// test if _Left != _Right
+	return (!(_Left == _Right));
+	}
+
+template<class... _Types1,
+	class... _Types2> inline
+	bool operator<(const tuple<_Types1...>& _Left,
+		const tuple<_Types2...>& _Right)
+	{	// test if _Left < _Right
+	return (_Left._Less(_Right));
+	}
+
+template<class... _Types1,
+	class... _Types2> inline
+	bool operator>=(const tuple<_Types1...>& _Left,
+		const tuple<_Types2...>& _Right)
+	{	// test if _Left >= _Right
+	return (!(_Left < _Right));
+	}
+
+template<class... _Types1,
+	class... _Types2> inline
+	bool operator>(const tuple<_Types1...>& _Left,
+		const tuple<_Types2...>& _Right)
+	{	// test if _Left > _Right
+	return (_Right < _Left);
+	}
+
+template<class... _Types1,
+	class... _Types2> inline
+	bool operator<=(const tuple<_Types1...>& _Left,
+		const tuple<_Types2...>& _Right)
+	{	// test if _Left <= _Right
+	return (!(_Right < _Left));
+	}
+
+template<class... _Types> inline
+	void swap(tuple<_Types...>& _Left,
+		tuple<_Types...>& _Right)
+	{	// swap _Left and _Right
+	return (_Left.swap(_Right));
+	}
+
+	// CLASS tuple_element
+template<size_t _Index, class _Tuple>
+	class tuple_element;
+
+template<class _This, class... _Rest>
+	class tuple_element<0, tuple<_This, _Rest...> >
+	{	// select first element
+public:
+	typedef _This type;
+	typedef typename _Crefify<_This>::type _Ctype;
+	typedef typename _Refify<_This>::type _Rtype;
+	typedef tuple<_This, _Rest...> _Ttype;
+	};
+
+template<size_t _Index, class _This, class... _Rest>
+	class tuple_element<_Index, tuple<_This, _Rest...> >
+		: public tuple_element<_Index - 1, tuple<_Rest...> >
+	{	// recursive tuple_element definition
+	};
+
+	// CLASS tuple_size
+template<class _Tuple>
+	class tuple_size;
+
+template<class... _Types>
+	class tuple_size<tuple<_Types...> >
+	{	// size of tuple
+public:
+	static const size_t value = sizeof...(_Types);
+	};
+
+	// FUNCTION get
+template<size_t _Index, class... _Types> inline
+	typename tuple_element<_Index, tuple<_Types...> >::_Rtype
+		get(tuple<_Types...>& _Tuple)
+	{	// get reference to _Index element of tuple
+	typedef typename tuple_element<_Index, tuple<_Types...> >::_Ttype _Ttype;
+	return (((_Ttype *)&_Tuple)->_Myfirst);
+	}
+
+template<size_t _Index, class... _Types> inline
+	typename tuple_element<_Index, tuple<_Types...> >::_Ctype
+		get(const tuple<_Types...>& _Tuple)
+	{	// get const reference to _Index element of tuple
+	typedef typename tuple_element<_Index, tuple<_Types...> >::_Ttype _Ttype;
+	return (((_Ttype *)&_Tuple)->_Myfirst);
+	}
+
+	// FUNCTION make_tuple
+template<class... _Types> inline
+	tuple<typename _Unrefwrap<_Types>::type...>
+		make_tuple(_Types... _Args)
+	{	// make tuple from elements
+	typedef tuple<typename _Unrefwrap<_Types>::type...> _Ttype;
+	return (_Ttype(_Args...));
+	}
+
+	// FUNCTION tie
+template<class... _Types> inline
+	tuple<_Types&...>
+		tie(_Types&... _Args)
+	{	// make tuple from elements
+	typedef tuple<_Types&...> _Ttype;
+	return (_Ttype(_Args...));
+	}
+
+	// TEMPLATE CLASSES _Arg_idx and _Make_arg_idx
+template<size_t... _Indexes>
+	struct _Arg_idx
+	{	// _Arg_idx<0, 1, 2...> for converting tuple to argument list
+	};
+
+template<size_t _Idx,
+	class _Arg_int_type,
+	class... _Types>
+	struct _Make_arg_idx1;
+
+template<size_t _Idx,
+	size_t... _Indexes,
+	class _Ty,
+	class... _Types>
+	struct _Make_arg_idx1<_Idx, _Arg_idx<_Indexes...>, _Ty, _Types...>
+	{	// counts a type and recurses
+	typedef typename _Make_arg_idx1<_Idx + 1, _Arg_idx<_Indexes..., _Idx>,
+		_Types...>::type type;	// hoist bottom-most type
+	};
+
+template<size_t _Idx,
+	size_t... _Indexes>
+	struct _Make_arg_idx1<_Idx, _Arg_idx<_Indexes...> >
+	{	// ends recursion and defines type
+	typedef _Arg_idx<_Indexes...> type;
+	};
+
+template<class... _Types>
+	struct _Make_arg_idx
+		: public _Make_arg_idx1<0, _Arg_idx<>, _Types...>
+	{	// defines type as _Arg_idx<0, 1, 2... (sizeof...(_Types))-1>
+	};
+
+ #if _HAS_RVALUE_REFERENCES
+template<class... _Types1,
+	class... _Types2,
+	size_t... _Indexes1,
+	size_t... _Indexes2> inline
+	tuple<_Types1..., _Types2...>
+		_Tuple_cat(tuple<_Types1...>&& _T1,
+			tuple<_Types2...>&& _T2,
+			_Arg_idx<_Indexes1...>,
+			_Arg_idx<_Indexes2...>)
+	{	// concatenate tuples
+	return (tuple<_Types1..., _Types2...>(
+		_STD forward<typename tuple_element<_Indexes1,
+			tuple<_Types1...> >::type>(get<_Indexes1>(_T1))...,
+		_STD forward<typename tuple_element<_Indexes2,
+			tuple<_Types2...> >::type>(get<_Indexes2>(_T2))...));
+	}
+
+template<class... _Types1,
+	class... _Types2> inline
+	tuple<_Types1..., _Types2...>
+		tuple_cat(tuple<_Types1...>&& _T1,
+			tuple<_Types2...>&& _T2)
+	{	// concatenate tuples
+	return (_Tuple_cat(_STD forward<tuple<_Types1...> >(_T1),
+		_STD forward<tuple<_Types2...> >(_T2),
+		typename _Make_arg_idx<_Types1...>::type(),
+		typename _Make_arg_idx<_Types2...>::type()));
+	}
+
+template<class... _Types1> inline
+	tuple<_Types1...>
+		tuple_cat(tuple<_Types1...>&& _T1,
+			tuple<>&& _T2)
+	{	// concatenate tuples
+	return (_STD forward<tuple<_Types1...> >(_T1));
+	}
+
+template<class... _Types1> inline
+	tuple<_Types1...>
+		tuple_cat(tuple<>&& _T1,
+			tuple<_Types1...>&& _T2)
+	{	// concatenate tuples
+	return (_STD forward<tuple<_Types1...> >(_T2));
+	}
+
+inline tuple<>
+	tuple_cat(tuple<>&& _T1,
+		tuple<>&& _T2)
+	{	// concatenate tuples
+	return (_STD forward<tuple<> >(_T1));
+	}
+
+ #else /* _HAS_RVALUE_REFERENCES */
+	// TEMPLATE FUNCTION tuple_cat
+template<class... _Types1,
+	class... _Types2,
+	size_t... _Indexes1,
+	size_t... _Indexes2> inline
+	tuple<_Types1..., _Types2...>
+		_Tuple_cat(const tuple<_Types1...>& _T1,
+			const tuple<_Types2...>& _T2,
+			_Arg_idx<_Indexes1...>,
+			_Arg_idx<_Indexes2...>)
+	{	// concatenate tuples
+	return (tuple<_Types1..., _Types2...>(
+		get<_Indexes1>(_T1)...,
+		get<_Indexes2>(_T2)...));
+	}
+
+template<class... _Types1,
+	class... _Types2> inline
+	tuple<_Types1..., _Types2...>
+		tuple_cat(const tuple<_Types1...>& _T1,
+			const tuple<_Types2...>& _T2)
+	{	// concatenate tuples
+	return (_Tuple_cat(_T1,
+		_T2,
+		typename _Make_arg_idx<_Types1...>::type(),
+		typename _Make_arg_idx<_Types2...>::type()));
+	}
+
+template<class... _Types1> inline
+	tuple<_Types1...>
+		tuple_cat(const tuple<_Types1...>& _T1,
+			const tuple<>& _T2)
+	{	// concatenate tuples
+	return (tuple<_Types1...>(_T1));
+	}
+
+template<class... _Types1> inline
+	tuple<_Types1...>
+		tuple_cat(const tuple<>& _T1,
+			const tuple<_Types1...>& _T2)
+	{	// concatenate tuples
+	return (tuple<_Types1...>(_T2));
+	}
+
+inline tuple<>
+	tuple_cat(const tuple<>& _T1,
+		const tuple<>& _T2)
+	{	// concatenate tuples
+	return (_T1);
+	}
+ #endif /* _HAS_RVALUE_REFERENCES */
+
+/*
+ * Copyright (c) 1992-2010 by P.J. Plauger.  ALL RIGHTS RESERVED.
+ * Consult your license regarding permissions and restrictions.
+V5.30:0009 */

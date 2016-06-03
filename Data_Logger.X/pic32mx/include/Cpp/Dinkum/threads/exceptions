@@ -1,0 +1,61 @@
+// exceptions header for threads library
+#ifndef _DINKUM_THREADS_EXCEPTIONS
+#define _DINKUM_THREADS_EXCEPTIONS
+#include <stdexcept>
+#include <Dinkum/threads/threads.h>
+
+namespace Dinkum
+	{	// Dinkum Libraries
+	namespace threads
+		{	// Dinkum C++ Threads Library
+
+class lock_error
+	: public _STD runtime_error
+	{	// lock error exception
+public:
+	lock_error();
+	};
+
+class thread_resource_error
+	: public _STD runtime_error
+	{	// resource error exception
+public:
+	thread_resource_error();
+	};
+
+void _Throw_lock_error();
+void _Throw_resource_error();
+void _Throw_bad_alloc();
+
+inline int _Validate(int res)
+	{	// convert error code to exception
+	if (res == thrd_nomem)
+		_Throw_bad_alloc();
+	else if (res == thrd_error)
+		_Throw_resource_error();
+	return res;
+	}
+		}	// namespace threads
+	}	// namespace Dinkum
+#endif /* _DINKUM_THREADS_EXCEPTIONS */
+
+/*
+ * This file is derived from software bearing the following
+ * restrictions:
+ *
+ * (c) Copyright William E. Kempf 2001
+ *
+ * Permission to use, copy, modify, distribute and sell this
+ * software and its documentation for any purpose is hereby
+ * granted without fee, provided that the above copyright
+ * notice appear in all copies and that both that copyright
+ * notice and this permission notice appear in supporting
+ * documentation. William E. Kempf makes no representations
+ * about the suitability of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ */
+
+/*
+ * Copyright (c) 1992-2010 by P.J. Plauger.  ALL RIGHTS RESERVED.
+ * Consult your license regarding permissions and restrictions.
+V5.30:0009 */

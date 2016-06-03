@@ -1,0 +1,196 @@
+// xvrefwrap internal header for variadic templates
+#ifndef _XVREFWRAP_
+#define _XVREFWRAP_
+
+	// TEMPLATE CLASS _Refwrap_impl FOR FUNCTIONS
+template<class _Rx,
+	class... _Types>
+	struct _Refwrap_impl<_Rx(_Types...)>
+		: _Call_wrapper<_Callable_fun<
+				_Rx(*)(_Types...), false> >,
+			_Fun_class_base<_Rx, _Types...>
+	{	// implement for pointer to function
+	typedef _Rx(*_Fty)(_Types...);
+	typedef _Rx result_type;
+
+	_Refwrap_impl(_Fty _Val)
+		: _Call_wrapper<_Callable_fun<_Fty, false> >(_Val)
+		{	// construct
+		}
+	};
+
+	// TEMPLATE CLASS _Refwrap_impl FOR POINTERS TO FUNCTIONS
+template<class _Rx,
+	class... _Types>
+	struct _Refwrap_impl<_Rx(*)(_Types...)>
+		: _Call_wrapper<_Callable_fun<
+				_Rx(*)(_Types...), true> >,
+			_Fun_class_base<_Rx, _Types...>
+	{	// implement for pointer to function
+	typedef _Rx(*_Fty)(_Types...);
+	typedef _Rx result_type;
+
+	_Refwrap_impl(_Fty& _Val)
+		: _Call_wrapper<_Callable_fun<_Fty, true> >(_Val)
+		{	// construct
+		}
+	};
+
+template<class _Rx,
+	class... _Types>
+	struct _Refwrap_impl<_Rx(*const)(_Types...)>
+		: _Call_wrapper<_Callable_fun<
+				_Rx(*const)(_Types...), true> >,
+			_Fun_class_base<_Rx, _Types...>
+	{	// implement for pointer to function
+	typedef _Rx(*const _Fty)(_Types...);
+	typedef _Rx result_type;
+
+	_Refwrap_impl(_Fty& _Val)
+		: _Call_wrapper<_Callable_fun<_Fty, true> >(_Val)
+		{	// construct
+		}
+	};
+
+	// TEMPLATE CLASS _Refwrap_impl FOR POINTERS TO MEMBER FUNCTIONS
+template<class _Rx,
+	class _Arg0,
+	class... _Types>
+	struct _Refwrap_impl<_Rx(_Arg0::*const)(_Types...)>
+		: _Call_wrapper<_Callable_pmf<
+				_Rx(_Arg0::*const)(_Types...), _Arg0, true> >,
+			_Fun_class_base<_Rx, _Types...>
+	{	// implement for pointer to member function
+	typedef _Rx(_Arg0::*const _Fty)(_Types...);
+	typedef _Rx result_type;
+
+	_Refwrap_impl(_Fty& _Val)
+		: _Call_wrapper<_Callable_pmf<_Fty, _Arg0, true> >(_Val)
+		{	// construct
+		}
+	};
+
+template<class _Rx,
+	class _Arg0,
+	class... _Types>
+	struct _Refwrap_impl<_Rx(_Arg0::*const)(_Types...) const>
+		: _Call_wrapper<_Callable_pmf<
+				_Rx(_Arg0::*const)(_Types...) const, _Arg0, true> >,
+			_Fun_class_base<_Rx, _Types...>
+	{	// implement for pointer to const member function
+	typedef _Rx(_Arg0::*const _Fty)(_Types...) const;
+	typedef _Rx result_type;
+
+	_Refwrap_impl(_Fty& _Val)
+		: _Call_wrapper<_Callable_pmf<_Fty, _Arg0, true> >(_Val)
+		{	// construct
+		}
+	};
+
+template<class _Rx,
+	class _Arg0,
+	class... _Types>
+	struct _Refwrap_impl<_Rx(_Arg0::*const)(_Types...) volatile>
+		: _Call_wrapper<_Callable_pmf<
+				_Rx(_Arg0::*const)(_Types...) volatile, _Arg0, true> >,
+			_Fun_class_base<_Rx, _Types...>
+	{	// implement for pointer to volatile member function
+	typedef _Rx(_Arg0::*const _Fty)(_Types...) volatile;
+	typedef _Rx result_type;
+
+	_Refwrap_impl(_Fty& _Val)
+		: _Call_wrapper<_Callable_pmf<_Fty, _Arg0, true> >(_Val)
+		{	// construct
+		}
+	};
+
+template<class _Rx,
+	class _Arg0,
+	class... _Types>
+	struct _Refwrap_impl<_Rx(_Arg0::*const)(_Types...) const volatile>
+		: _Call_wrapper<_Callable_pmf<
+				_Rx(_Arg0::*const)(_Types...) const volatile, _Arg0, true> >,
+			_Fun_class_base<_Rx, _Types...>
+	{	// implement for pointer to const volatile member function
+	typedef _Rx(_Arg0::*const _Fty)(_Types...) const volatile;
+	typedef _Rx result_type;
+
+	_Refwrap_impl(_Fty& _Val)
+		: _Call_wrapper<_Callable_pmf<_Fty, _Arg0, true> >(_Val)
+		{	// construct
+		}
+	};
+
+template<class _Rx,
+	class _Arg0,
+	class... _Types>
+	struct _Refwrap_impl<_Rx(_Arg0::*)(_Types...)>
+		: _Call_wrapper<_Callable_pmf<
+				_Rx(_Arg0::*)(_Types...), _Arg0, true> >,
+			_Fun_class_base<_Rx, _Types...>
+	{	// implement for pointer to member function
+	typedef _Rx(_Arg0::* _Fty)(_Types...);
+	typedef _Rx result_type;
+
+	_Refwrap_impl(_Fty& _Val)
+		: _Call_wrapper<_Callable_pmf<_Fty, _Arg0, true> >(_Val)
+		{	// construct
+		}
+	};
+
+template<class _Rx,
+	class _Arg0,
+	class... _Types>
+	struct _Refwrap_impl<_Rx(_Arg0::*)(_Types...) const>
+		: _Call_wrapper<_Callable_pmf<
+				_Rx(_Arg0::*)(_Types...) const, _Arg0, true> >,
+			_Fun_class_base<_Rx, _Types...>
+	{	// implement for pointer to const member function
+	typedef _Rx(_Arg0::* _Fty)(_Types...) const;
+	typedef _Rx result_type;
+
+	_Refwrap_impl(_Fty& _Val)
+		: _Call_wrapper<_Callable_pmf<_Fty, _Arg0, true> >(_Val)
+		{	// construct
+		}
+	};
+
+template<class _Rx,
+	class _Arg0,
+	class... _Types>
+	struct _Refwrap_impl<_Rx(_Arg0::*)(_Types...) volatile>
+		: _Call_wrapper<_Callable_pmf<
+				_Rx(_Arg0::*)(_Types...) volatile, _Arg0, true> >,
+			_Fun_class_base<_Rx, _Types...>
+	{	// implement for pointer to volatile member function
+	typedef _Rx(_Arg0::* _Fty)(_Types...) volatile;
+	typedef _Rx result_type;
+
+	_Refwrap_impl(_Fty& _Val)
+		: _Call_wrapper<_Callable_pmf<_Fty, _Arg0, true> >(_Val)
+		{	// construct
+		}
+	};
+
+template<class _Rx,
+	class _Arg0,
+	class... _Types>
+	struct _Refwrap_impl<_Rx(_Arg0::*)(_Types...) const volatile>
+		: _Call_wrapper<_Callable_pmf<
+				_Rx(_Arg0::*)(_Types...) const volatile, _Arg0, true> >,
+			_Fun_class_base<_Rx, _Types...>
+	{	// implement for pointer to const volatile member function
+	typedef _Rx(_Arg0::* _Fty)(_Types...) const volatile;
+	typedef _Rx result_type;
+
+	_Refwrap_impl(_Fty& _Val)
+		: _Call_wrapper<_Callable_pmf<_Fty, _Arg0, true> >(_Val)
+		{	// construct
+		}
+	};
+#endif /* _XVREFWRAP_ */
+
+/*
+ * Copyright (c) 1992-2010 by P.J. Plauger.  ALL RIGHTS RESERVED.
+ * Consult your license regarding permissions and restrictions.
+V5.30:0009 */

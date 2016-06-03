@@ -1,0 +1,54 @@
+// xxtrylock internal header
+// NOTE: no include guard
+
+ #if _NARGS == 1
+template <class _Farg0> inline
+	int _Try_lock(_Farg0 & _Fx0)
+	{	// lock one mutex
+	if (!_Fx0.try_lock())
+		return (0);
+	else
+		return (-1);
+	}
+
+ #elif 2 <= _NARGS
+template <_CLASS_FARG0> inline
+	int _Try_lock(_FARG0_F0_REF)
+	{	// lock n mutexes
+	int _Res;
+	if (!_Fx0.try_lock())
+		return (0);
+	try {	// handle exceptions from tail lock
+		if ((_Res = _Try_lock(_F1_F2)) != -1)
+			{	// tail lock failed
+			_Fx0.unlock();
+			++_Res;
+			}
+	}
+	catch (...)
+		{	// tail lock threw exception
+		_Fx0.unlock();
+		throw;
+		}
+	return (_Res);
+	}
+
+template <_CLASS_FARG0> inline
+	int try_lock(_FARG0_F0_REF)
+	{	// try to lock mutexes
+	return (_Try_lock(_F0_F1));
+	}
+
+template <_CLASS_FARG0> inline
+	void lock(_FARG0_F0_REF)
+	{	// lock mutexes
+	int _Res = 0;
+	while (_Res != -1)
+		_Res = _Try_lock(_F0_F1);
+	}
+ #endif /* _NARGS == 1 */
+
+/*
+ * Copyright (c) 1992-2010 by P.J. Plauger.  ALL RIGHTS RESERVED.
+ * Consult your license regarding permissions and restrictions.
+V5.30:0009 */

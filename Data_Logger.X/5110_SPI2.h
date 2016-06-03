@@ -331,6 +331,7 @@ void LCD5110_writeInteger(int v)
     unsigned char buf[8];
 
     LCD5110_sendString(itoa(buf, v, 10));
+    //sprintf()
 }
 
 

@@ -1,0 +1,22 @@
+// xxthread internal header
+// NOTE: no include guard
+
+ #if _HAS_RVALUE_REFERENCES
+template<class _Fn _C_CLASS_ARG0>
+	explicit thread(_Fn _REFREF _Fx _C_ARG0_A0_REFREF)
+	{	// construct with _Fx(_Args)
+	_Launch(&_Thr, tr1::bind(_Fx _C_A0_A1));
+	}
+
+ #else /* _HAS_RVALUE_REFERENCES */
+template<class _Fn _C_CLASS_ARG0>
+	explicit thread(_Fn _Fx _C_ARG0_A0_CREF)
+	{	// construct with _Fx(_Args)
+	_Launch(&_Thr, tr1::bind(_Fx _C_A0_A1));
+	}
+ #endif /* _HAS_RVALUE_REFERENCES */
+
+/*
+ * Copyright (c) 1992-2010 by P.J. Plauger.  ALL RIGHTS RESERVED.
+ * Consult your license regarding permissions and restrictions.
+V5.30:0009 */

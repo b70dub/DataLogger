@@ -1,0 +1,13 @@
+// xxonce internal header
+// NOTE: no include guard
+
+template <class _Fn _C_CLASS_FARG0> inline
+	void call_once(once_flag& _Flag, _Fn _Fx _C_FARG0_F0_REF)
+	{	// call _Fx(_F0_F1) once
+	_Call_it(_Flag, tr1::bind(_Fx _C_F0_F1));
+	}
+
+/*
+ * Copyright (c) 1992-2010 by P.J. Plauger.  ALL RIGHTS RESERVED.
+ * Consult your license regarding permissions and restrictions.
+V5.30:0009 */

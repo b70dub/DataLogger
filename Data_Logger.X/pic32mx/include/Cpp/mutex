@@ -1,0 +1,511 @@
+// mutex C++0X header
+#ifndef _MUTEX_
+#define _MUTEX_
+#include <Dinkum/threads/xthread>
+#include <chrono>
+#include <functional>
+
+_STD_BEGIN
+	// MUTUAL EXCLUSION
+class _Mutex_base
+	{	// base class for all mutex types
+public:
+	_Mutex_base(int _Flags = 0)
+		{	// construct with _Flags
+		_Mtx_initX(&_Mtx, _Flags | _Mtx_try);
+		}
+
+	~_Mutex_base()
+		{	// clean up
+		_Mtx_destroy(&_Mtx);
+		}
+
+private:
+	_Mutex_base(const _Mutex_base&);	// not implemented
+	_Mutex_base& operator=(const _Mutex_base&);	// not implemented
+
+public:
+	void lock()
+		{	// lock the mutex
+		_Mtx_lockX(&_Mtx);
+		}
+
+	bool try_lock()
+		{	// try to lock the mutex
+		return (_Mtx_trylockX(&_Mtx) == _Thrd_success);
+		}
+
+	void unlock()
+		{	// unlock the mutex
+		_Mtx_unlockX(&_Mtx);
+		}
+
+	typedef _Mtx_t native_handle_type;
+
+	native_handle_type native_handle()
+		{	// return mutex handle
+		return (_Mtx);
+		}
+
+private:
+	friend class _Timed_mutex_base;
+	friend class condition_variable;
+	_Mtx_t _Mtx;
+	};
+
+class _Timed_mutex_base
+	: public _Mutex_base
+	{	// base class for mutexes with timeouts
+public:
+	_Timed_mutex_base(int _Flags = 0)
+		: _Mutex_base(_Flags | _Mtx_timed)
+		{	// construct from _Flags
+		}
+
+private:
+	_Timed_mutex_base(const _Timed_mutex_base&);	// not implemented
+	_Timed_mutex_base& operator=(const _Timed_mutex_base&);	// not implemented
+public:
+	template<class _Rep,
+		class _Period>
+		bool try_lock_for(const chrono::duration<_Rep, _Period>& _Rel_time)
+		{	// try to lock for duration
+		Dinkum::threads::xtime _Tgt = _To_xtime(_Rel_time);
+		return (try_lock_until(&_Tgt));
+		}
+
+	template<class _Clock, class _Duration>
+		bool try_lock_until(
+			const chrono::time_point<_Clock, _Duration>& _Abs_time)
+		{	// try to lock until time point
+		typename chrono::time_point<_Clock, _Duration>::duration _Rel_time =
+			_Abs_time - _Clock::now();
+		return (try_lock_for(_Rel_time));
+		}
+
+	bool try_lock_until(const xtime *_Abs_time)
+		{	// try to lock the mutex with timeout
+		return (_Mtx_timedlockX(&_Mtx, _Abs_time) == _Thrd_success);
+		}
+	};
+
+class mutex
+	: public _Mutex_base
+	{	// class for mutual exclusion
+public:
+	mutex()
+		: _Mutex_base()
+		{	// default construct
+		}
+
+private:
+	mutex(const mutex&); // not implemented
+	mutex& operator=(const mutex&); // not implemented
+	};
+
+class recursive_mutex
+	: public _Mutex_base
+	{	// class for recursive mutual exclusion
+public:
+	recursive_mutex()
+		: _Mutex_base(_Mtx_recursive)
+		{	// default construct
+		}
+
+private:
+	recursive_mutex(const recursive_mutex&);	// not implemented
+	recursive_mutex& operator=(const recursive_mutex&); // not implemented
+	};
+
+class timed_mutex
+	: public _Timed_mutex_base
+	{	// class for mutual exclusion with timeouts
+public:
+	timed_mutex()
+		: _Timed_mutex_base()
+		{	// default construct
+		}
+
+private:
+	timed_mutex(const timed_mutex&);	// not implemented
+	timed_mutex& operator=(const timed_mutex&); // not implemented
+	};
+
+class recursive_timed_mutex
+	: public _Timed_mutex_base
+	{	// class for recursive mutual exclusion with timeouts
+public:
+	recursive_timed_mutex()
+		: _Timed_mutex_base(_Mtx_recursive)
+		{	// default construct
+		}
+
+private:
+	recursive_timed_mutex(const recursive_timed_mutex&);	// not implemented
+	recursive_timed_mutex& operator=(
+		const recursive_timed_mutex&); // not implemented
+	};
+
+	// LOCK PROPERTIES
+struct adopt_lock_t
+	{	// indicates adopt lock
+	};
+
+struct defer_lock_t
+	{	// indicates defer lock
+	};
+
+struct try_to_lock_t
+	{	// indicates try to lock
+	};
+
+extern const adopt_lock_t adopt_lock;
+extern const defer_lock_t defer_lock;
+extern const try_to_lock_t try_to_lock;
+
+	// LOCKS
+template<class _Mutex>
+	class lock_guard
+	{	// class with destructor that unlocks mutex
+public:
+	typedef _Mutex mutex_type;
+
+	explicit lock_guard(_Mutex& _Mtx)
+		: _MyMutex(_Mtx)
+		{	// construct and lock
+		_MyMutex.lock();
+		}
+
+	lock_guard(_Mutex& _Mtx, adopt_lock_t)
+		: _MyMutex(_Mtx)
+		{	// construct but don't lock
+		}
+
+	~lock_guard()
+		{	// unlock
+		_MyMutex.unlock();
+		}
+
+private:
+	lock_guard(const lock_guard&);  // not implemented
+	lock_guard& operator=(const lock_guard&);	// not implemented
+
+private:
+	_Mutex& _MyMutex;
+	};
+
+template<class _Mutex>
+	class unique_lock
+	{	// whizzy class with destructor that unlocks mutex
+public:
+	typedef _Mutex mutex_type;
+
+	// CONSTRUCT, ASSIGN, AND DESTROY
+	unique_lock()
+		: _Pmtx(0), _Owns(false)
+		{	// default construct
+		}
+
+	explicit unique_lock(_Mutex& _Mtx)
+		: _Pmtx(&_Mtx), _Owns(false)
+		{	// construct and lock
+		_Pmtx->lock();
+		_Owns = true;
+		}
+
+	unique_lock(_Mutex& _Mtx, adopt_lock_t)
+		: _Pmtx(&_Mtx), _Owns(true)
+		{	// construct and assume already locked
+		}
+
+	unique_lock(_Mutex& _Mtx, defer_lock_t)
+		: _Pmtx(&_Mtx), _Owns(false)
+		{	// construct but don't lock
+		}
+
+	unique_lock(_Mutex& _Mtx, try_to_lock_t)
+		: _Pmtx(&_Mtx), _Owns(_Pmtx->try_lock())
+		{	// construct and try to lock
+		}
+
+	template<class _Rep, class _Period>
+		unique_lock(_Mutex& _Mtx,
+			const chrono::duration<_Rep, _Period>& _Rel_time)
+		: _Pmtx(&_Mtx), _Owns(_Pmtx->try_lock_for(_Rel_time))
+		{	// construct and lock with timeout
+		}
+
+	template<class _Clock, class _Duration>
+		unique_lock(_Mutex& _Mtx,
+			const chrono::time_point<_Clock, _Duration>& _Abs_time)
+		: _Pmtx(&_Mtx), _Owns(_Pmtx->try_lock_until(_Abs_time))
+		{	// construct and lock with timeout
+		}
+
+	unique_lock(_Mutex& _Mtx, const xtime *_Abs_time)
+		: _Pmtx(&_Mtx), _Owns(false)
+		{	// try to lock until _Abs_time
+		_Owns = _Pmtx->try_lock_until(_Abs_time);
+		}
+
+	unique_lock(unique_lock& _Other)
+		: _Pmtx(_Other._Pmtx), _Owns(_Other._Owns)
+		{	// destructive copy
+		_Other._Pmtx = 0;
+		_Other._Owns = false;
+		}
+
+	unique_lock& operator=(unique_lock& _Other)
+		{	// destructive copy
+		if (_Owns)
+			_Pmtx->unlock();
+		_Pmtx = _Other._Pmtx;
+		_Owns = _Other._Owns;
+		_Other._Pmtx = 0;
+		_Other._Owns = false;
+		return (*this);
+		}
+
+ #if _HAS_RVALUE_REFERENCES
+	unique_lock(unique_lock&& _Other)
+		: _Pmtx(_Other._Pmtx), _Owns(_Other._Owns)
+		{	// destructive copy
+		_Other._Pmtx = 0;
+		_Other._Owns = false;
+		}
+
+	unique_lock& operator=(unique_lock&& _Other)
+		{	// destructive copy
+		if (_Owns)
+			_Pmtx->unlock();
+		_Pmtx = _Other._Pmtx;
+		_Owns = _Other._Owns;
+		_Other._Pmtx = 0;
+		_Other._Owns = false;
+		return (*this);
+		}
+ #endif /* _HAS_RVALUE_REFERENCES */
+
+	~unique_lock()
+		{	// clean up
+		if (_Owns)
+			_Pmtx->unlock();
+		}
+
+	// LOCK AND UNLOCK
+	void lock()
+		{	// lock the mutex
+		_Pmtx->lock();
+		_Owns = true;
+		}
+
+	bool try_lock()
+		{	// try to lock the mutex
+		_Owns = _Pmtx->try_lock();
+		}
+
+	template<class _Rep,
+		class _Period>
+		bool try_lock_for(const chrono::duration<_Rep, _Period>& _Rel_time)
+		{	// try to lock mutex with timeout
+		_Owns = _Pmtx->try_lock_for(_Rel_time);
+		return (_Owns);
+		}
+
+	template<class _Clock,
+		class _Duration>
+		bool try_lock_until(const chrono::time_point<_Clock, _Duration>& _Abs_time)
+		{	// try to lock mutex with timeout
+		_Owns = _Pmtx->try_lock_until(_Abs_time);
+		return (_Owns);
+		}
+
+	bool try_lock_until(const xtime *_Abs_time)
+		{	// try to lock the mutex until _Abs_time
+		_Owns = _Pmtx->try_lock_until(_Abs_time);
+		return (_Owns);
+		}
+
+	void unlock()
+		{	// unlock the mutex
+		_Pmtx->unlock();
+		_Owns = false;
+		}
+
+	// MUTATE
+	void swap(unique_lock& _Other)
+		{	// swap with _Other
+		_Mutex *_T_mtx = _Pmtx;
+		_Pmtx = _Other._Pmtx;
+		_Other._Pmtx = _T_mtx;
+		bool _T_owns = _Owns;
+		_Owns = _Other._Owns;
+		_Other._Owns = _T_owns;
+		}
+
+	_Mutex *release()
+		{	// disconnect
+		_Mutex *_Res = _Pmtx;
+		_Pmtx = 0;
+		_Owns = false;
+		return (_Res);
+		}
+
+	// OBSERVE
+	bool owns_lock() const
+		{	// return true if this object owns the lock
+		return (_Owns);
+		}
+
+	_EXP_OP operator bool() const
+		{	// return true if this object owns the lock
+		return (_Owns);
+		}
+
+	_Mutex *mutex() const
+		{	// return pointer to managed mutex
+		return (_Pmtx);
+		}
+
+private:
+	_Mutex *_Pmtx;
+	bool _Owns;
+	};
+
+	// SWAP
+template<class _Mutex>
+	void swap(unique_lock<_Mutex>& _Left,
+		unique_lock<_Mutex>& _Right)
+	{	// swap _Left and _Right
+	_Left.swap(_Right);
+	}
+
+	// MULTIPLE LOCKS
+
+ #if _HAS_VARIADIC_TEMPLATES
+template<class _Lock0> inline
+	int _Try_lock(_Lock0& _Lk0)
+	{	// try to lock one mutex
+	if (!_Lk0.try_lock())
+		return (0);
+	else
+		return (-1);
+	}
+
+template<class _Lock0,
+	class _Lock1,
+	class _DOTS _LockN> inline
+	int _Try_lock(_Lock0& _Lk0, _Lock1& _Lk1, _LockN& _DOTS _LkN)
+	{	// try to lock n-1 mutexes
+	int _Res;
+	if (!_Lk0.try_lock())
+		return (0);
+	try {	// handle exceptions from tail lock
+		if ((_Res = try_lock(_Lk1, _LkN _DOTS)) != -1)
+			{	// tail lock failed
+			_Lk0.unlock();
+			++_Res;
+			}
+	}
+	catch (...)
+		{	// tail lock threw exception
+		_Lk0.unlock();
+		throw;
+		}
+	return (_Res);
+	}
+
+template<class _Lock0,
+	class _DOTS _LockN> inline
+	int try_lock(_Lock0& _Lk0, _LockN& _DOTS _LkN)
+	{	// try to lock n-1 mutexes
+	return (_Try_lock(_Lk0, _LkN _DOTS));
+	}
+
+template<class _Lock0,
+	class _Lock1,
+	class _DOTS _LockN> inline
+	void lock(_Lock0& _Lk0, _Lock1& _Lk1, _LockN& _DOTS _LkN)
+	{	// lock N mutexes
+	int _Res = 0;
+	while (_Res != -1)
+		_Res = _Try_lock(_Lk0, _Lk1, _LkN _DOTS);
+	}
+
+ #else /* _HAS_VARIADIC_TEMPLATES */
+ #define _INCL_FILE_xxtrylock
+ #include <xfwrap>
+ #endif /* _HAS_VARIADIC_TEMPLATES */
+
+	// CALL ONCE
+class _Once_pad
+	{	// base class for call once
+public:
+	virtual void _Call() const = 0;
+	};
+
+template<class _Target>
+	class _Once_target
+		: public _Once_pad
+	{	// template class for call once
+public:
+	_Once_target(const _Target& _Tgt)
+		: _MyTgt(&_Tgt)
+		{	// construct from target
+		}
+
+	void _Call() const
+		{	// do it
+		(*_MyTgt)();
+		}
+
+private:
+	const _Target *_MyTgt;
+	};
+
+_EXTERN_C
+void _Do_call(void *_Tgt);
+_END_EXTERN_C
+
+struct once_flag
+	{	// class to hold data for call once
+	_CONST_FUN once_flag()
+		: _Flag(_ONCE_FLAG_CPP_INIT)
+		{	// default construct
+		}
+
+private:
+	once_flag(const once_flag&);	// not implemented
+	once_flag& operator=(const once_flag&); // not implemented
+
+public:
+	_Once_flag_cpp _Flag;
+	};
+
+template<class _Target> inline
+	void _Call_it(once_flag& _Flag, const _Target& _Tgt)
+	{	// create call data object and make protected call
+	_Once_target<_Target> _Once_data(_Tgt);
+	_Call_onceEx(&_Flag._Flag, _Do_call,
+		(void *)static_cast<const _Once_pad*>(&_Once_data));
+	}
+
+ #if _HAS_VARIADIC_TEMPLATES
+template<class _Fn,
+	class _DOTS _Args> inline
+	void call_once(once_flag& _Flag, _Fn _Fx, _Args&& _DOTS _Ax)
+	{	// call _Fx(_Ax...) once
+	_Call_it(_Flag, bind(_Fx, _Ax _DOTS));
+	}
+
+ #else /* _HAS_VARIADIC_TEMPLATES */
+ #define _INCL_FILE_xxonce
+ #include <xfwrap>
+ #endif /* _HAS_VARIADIC_TEMPLATES */
+_STD_END
+#endif /* _MUTEX_ */
+
+/*
+ * Copyright (c) 1992-2010 by P.J. Plauger.  ALL RIGHTS RESERVED.
+ * Consult your license regarding permissions and restrictions.
+V5.30:0009 */
