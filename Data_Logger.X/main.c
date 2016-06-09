@@ -51,6 +51,7 @@
 //#include "5110_SPI2.h"
 #include "32_ADC.h"
 #include "ff.h"
+#include "TimeStamp.h"
 
 //#define GetSystemClock() (40000000ul)
 #define GetSystemClock()        (80000000ul) //pic32 runs at 80mHz
@@ -73,8 +74,9 @@
  
  UINT len;          //needed for writing file
 
+ static int irtc_mSec;
  volatile BYTE rtcYear = 111, rtcMon = 11, rtcMday = 22;    // RTC date values
- volatile BYTE rtcHour = 0, rtcMin = 0, rtcSec = 0;         // RTC time values
+ volatile BYTE rtcHour = 0, rtcMin = 0, rtcSec = 0;    // RTC time values
  volatile unsigned long tick;                               // Used for ISR
 
 //Work registers for fs command
@@ -101,7 +103,7 @@ FIL file1, file2;      /* File objects */
 void __ISR(_CORE_TIMER_VECTOR, IPL2SOFT) CoreTimerHandler(void)
 {
    static const BYTE dom[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-   static int div1k;
+
    BYTE n;
 
    // clear the interrupt flag
@@ -113,8 +115,8 @@ void __ISR(_CORE_TIMER_VECTOR, IPL2SOFT) CoreTimerHandler(void)
    tick++;            // increment the benchmarking timer
 
    // implement a 'fake' RTCC
-   if (++div1k >= 1000) {
-      div1k = 0;
+   if (++irtc_mSec >= 1000) {
+      irtc_mSec = 0;
       if (++rtcSec >= 60) {
          rtcSec = 0;
          if (++rtcMin >= 60) {

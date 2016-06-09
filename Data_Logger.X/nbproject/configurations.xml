@@ -23,6 +23,7 @@
       <itemPath>mmcPIC32.c</itemPath>
       <itemPath>ff.c</itemPath>
       <itemPath>C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MyToolbox.c</itemPath>
+      <itemPath>C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareComms.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
