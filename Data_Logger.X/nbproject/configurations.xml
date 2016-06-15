@@ -8,9 +8,12 @@
       <itemPath>ff.h</itemPath>
       <itemPath>ffconf.h</itemPath>
       <itemPath>integer.h</itemPath>
-      <itemPath>32_ADC.h</itemPath>
       <itemPath>diskio.h</itemPath>
-      <itemPath>MX440_STD.h</itemPath>
+      <itemPath>C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MMA8452_Config.h</itemPath>
+      <itemPath>C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/SystemTimer.h</itemPath>
+      <itemPath>C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareDrvr.h</itemPath>
+      <itemPath>C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/GenericTypeDefs.h</itemPath>
+      <itemPath>HardwareProfile.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -23,7 +26,9 @@
       <itemPath>mmcPIC32.c</itemPath>
       <itemPath>ff.c</itemPath>
       <itemPath>C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MyToolbox.c</itemPath>
-      <itemPath>C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareComms.c</itemPath>
+      <itemPath>C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MMA8452_I2C.c</itemPath>
+      <itemPath>C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/SystemTimer.c</itemPath>
+      <itemPath>C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareDrvr.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

@@ -45,17 +45,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=main.c mmcPIC32.c ff.c "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MyToolbox.c" "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareComms.c"
+SOURCEFILES_QUOTED_IF_SPACED=main.c mmcPIC32.c ff.c "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MyToolbox.c" "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MMA8452_I2C.c" "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/SystemTimer.c" "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareDrvr.c"
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/main.o ${OBJECTDIR}/mmcPIC32.o ${OBJECTDIR}/ff.o ${OBJECTDIR}/_ext/741207277/MyToolbox.o ${OBJECTDIR}/_ext/741207277/I2C_HardwareComms.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/main.o.d ${OBJECTDIR}/mmcPIC32.o.d ${OBJECTDIR}/ff.o.d ${OBJECTDIR}/_ext/741207277/MyToolbox.o.d ${OBJECTDIR}/_ext/741207277/I2C_HardwareComms.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/main.o ${OBJECTDIR}/mmcPIC32.o ${OBJECTDIR}/ff.o ${OBJECTDIR}/_ext/741207277/MyToolbox.o ${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o ${OBJECTDIR}/_ext/741207277/SystemTimer.o ${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/main.o.d ${OBJECTDIR}/mmcPIC32.o.d ${OBJECTDIR}/ff.o.d ${OBJECTDIR}/_ext/741207277/MyToolbox.o.d ${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o.d ${OBJECTDIR}/_ext/741207277/SystemTimer.o.d ${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/main.o ${OBJECTDIR}/mmcPIC32.o ${OBJECTDIR}/ff.o ${OBJECTDIR}/_ext/741207277/MyToolbox.o ${OBJECTDIR}/_ext/741207277/I2C_HardwareComms.o
+OBJECTFILES=${OBJECTDIR}/main.o ${OBJECTDIR}/mmcPIC32.o ${OBJECTDIR}/ff.o ${OBJECTDIR}/_ext/741207277/MyToolbox.o ${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o ${OBJECTDIR}/_ext/741207277/SystemTimer.o ${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o
 
 # Source Files
-SOURCEFILES=main.c mmcPIC32.c ff.c C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MyToolbox.c C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareComms.c
+SOURCEFILES=main.c mmcPIC32.c ff.c C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MyToolbox.c C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MMA8452_I2C.c C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/SystemTimer.c C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareDrvr.c
 
 
 CFLAGS=
@@ -118,11 +118,23 @@ ${OBJECTDIR}/_ext/741207277/MyToolbox.o: C:/Users/Public/Documents/PIC\ Projects
 	@${RM} ${OBJECTDIR}/_ext/741207277/MyToolbox.o 
 	@${FIXDEPS} "${OBJECTDIR}/_ext/741207277/MyToolbox.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/741207277/MyToolbox.o.d" -o ${OBJECTDIR}/_ext/741207277/MyToolbox.o "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MyToolbox.c"   -legacy-libc
 	
-${OBJECTDIR}/_ext/741207277/I2C_HardwareComms.o: C:/Users/Public/Documents/PIC\ Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareComms.c  nbproject/Makefile-${CND_CONF}.mk
+${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o: C:/Users/Public/Documents/PIC\ Projects/GitSourceTree_Repository/Data_Logger.X/MMA8452_I2C.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/741207277 
-	@${RM} ${OBJECTDIR}/_ext/741207277/I2C_HardwareComms.o.d 
-	@${RM} ${OBJECTDIR}/_ext/741207277/I2C_HardwareComms.o 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/741207277/I2C_HardwareComms.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/741207277/I2C_HardwareComms.o.d" -o ${OBJECTDIR}/_ext/741207277/I2C_HardwareComms.o "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareComms.c"   -legacy-libc
+	@${RM} ${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o.d 
+	@${RM} ${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o.d" -o ${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MMA8452_I2C.c"   -legacy-libc
+	
+${OBJECTDIR}/_ext/741207277/SystemTimer.o: C:/Users/Public/Documents/PIC\ Projects/GitSourceTree_Repository/Data_Logger.X/SystemTimer.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/741207277 
+	@${RM} ${OBJECTDIR}/_ext/741207277/SystemTimer.o.d 
+	@${RM} ${OBJECTDIR}/_ext/741207277/SystemTimer.o 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/741207277/SystemTimer.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/741207277/SystemTimer.o.d" -o ${OBJECTDIR}/_ext/741207277/SystemTimer.o "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/SystemTimer.c"   -legacy-libc
+	
+${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o: C:/Users/Public/Documents/PIC\ Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareDrvr.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/741207277 
+	@${RM} ${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o.d 
+	@${RM} ${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o.d" -o ${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareDrvr.c"   -legacy-libc
 	
 else
 ${OBJECTDIR}/main.o: main.c  nbproject/Makefile-${CND_CONF}.mk
@@ -149,11 +161,23 @@ ${OBJECTDIR}/_ext/741207277/MyToolbox.o: C:/Users/Public/Documents/PIC\ Projects
 	@${RM} ${OBJECTDIR}/_ext/741207277/MyToolbox.o 
 	@${FIXDEPS} "${OBJECTDIR}/_ext/741207277/MyToolbox.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/741207277/MyToolbox.o.d" -o ${OBJECTDIR}/_ext/741207277/MyToolbox.o "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MyToolbox.c"   -legacy-libc
 	
-${OBJECTDIR}/_ext/741207277/I2C_HardwareComms.o: C:/Users/Public/Documents/PIC\ Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareComms.c  nbproject/Makefile-${CND_CONF}.mk
+${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o: C:/Users/Public/Documents/PIC\ Projects/GitSourceTree_Repository/Data_Logger.X/MMA8452_I2C.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/741207277 
-	@${RM} ${OBJECTDIR}/_ext/741207277/I2C_HardwareComms.o.d 
-	@${RM} ${OBJECTDIR}/_ext/741207277/I2C_HardwareComms.o 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/741207277/I2C_HardwareComms.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/741207277/I2C_HardwareComms.o.d" -o ${OBJECTDIR}/_ext/741207277/I2C_HardwareComms.o "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareComms.c"   -legacy-libc
+	@${RM} ${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o.d 
+	@${RM} ${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o.d" -o ${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MMA8452_I2C.c"   -legacy-libc
+	
+${OBJECTDIR}/_ext/741207277/SystemTimer.o: C:/Users/Public/Documents/PIC\ Projects/GitSourceTree_Repository/Data_Logger.X/SystemTimer.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/741207277 
+	@${RM} ${OBJECTDIR}/_ext/741207277/SystemTimer.o.d 
+	@${RM} ${OBJECTDIR}/_ext/741207277/SystemTimer.o 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/741207277/SystemTimer.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/741207277/SystemTimer.o.d" -o ${OBJECTDIR}/_ext/741207277/SystemTimer.o "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/SystemTimer.c"   -legacy-libc
+	
+${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o: C:/Users/Public/Documents/PIC\ Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareDrvr.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/741207277 
+	@${RM} ${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o.d 
+	@${RM} ${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o.d" -o ${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareDrvr.c"   -legacy-libc
 	
 endif
 

@@ -18,6 +18,8 @@
 #include <stdlib.h>
 #include <xc.h>
 
+#include <p32xxxx.h>
+#include <plib.h>
 
 /*******************************************************************************
  Configuration settings
@@ -67,13 +69,24 @@
 
 // Clock Constants
 
-#define SYS_CLOCK (80000000L)
 
-#define GetSystemClock()            (SYS_CLOCK)
-#define GetPeripheralClock()        (SYS_CLOCK/2)
-#define GetInstructionClock()       (SYS_CLOCK)
+
+#define GetSystemClock()        (80000000ul)
+#define GetPeripheralClock()    (GetSystemClock() / (1 << OSCCONbits.PBDIV))
+#define GetInstructionClock()   (GetSystemClock())
+
+
+
+//#define SYS_CLOCK (80000000L)
+
+//#define GetSystemClock()            (SYS_CLOCK)
+//#define GetPeripheralClock()        (SYS_CLOCK/2)
+//#define GetInstructionClock()       (SYS_CLOCK)
 #define I2C_CLOCK_FREQ              5000
 
 // EEPROM Constants
 #define EEPROM_I2C_BUS              I2C1
 #define EEPROM_ADDRESS              0x50        // 0b1010000 Serial EEPROM address
+
+
+

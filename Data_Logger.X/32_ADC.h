@@ -11,7 +11,7 @@
  * Created on February 13, 2015, 4:59 PM
  ******************************************************************************/
 
-#include <plib.h>
+//#include <plib.h>
 
 void adcON(){
 	// configure and enable the ADC
