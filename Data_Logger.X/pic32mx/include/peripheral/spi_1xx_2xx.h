@@ -116,14 +116,14 @@ typedef enum
     // master opening mode
     SPI_OPEN_MSTEN =        _SPIxCON_MASK_(MSTEN_MASK), // set the Master mode
     SPI_OPEN_SMP_END =      _SPIxCON_MASK_(SMP_MASK),   // Master Sample Phase for the input bit at the end of the data out time. Otherwise data is sampled in the middle.
-    SPI_OPEN_MSSEN =        _SPIxCON_MASK_(MSSEN_MASK), // enable the driving of the Slave Select (SS) output pin by the Master
+    SPI_OPEN_MSSEN =        _SPIxCON_MASK_(SSEN_MASK), // enable the driving of the Slave Select (SS) output pin by the Master
     SPI_OPEN_MSSEN_HIGH =   _SPIxCON_MASK_(FRMPOL_MASK),    // Master driven SS output active high. Otherwise low.
 
     // slave opening mode
     SPI_OPEN_SLVEN =        0,              // set the Slave mode
     SPI_OPEN_SSEN =         _SPIxCON_MASK_(SSEN_MASK),  // enable the SS input pin.
 
-    SPI_OPEN_MCLKSEL =      _SPIxCON_MASK_(MCLKSEL_MASK),
+//    SPI_OPEN_MCLKSEL =      _SPIxCON_MASK_(MCLKSEL_MASK),  BTA comented out --not used anywhere
 
     // clocking opening mode
     SPI_OPEN_CKP_HIGH = _SPIxCON_MASK_(CKP_MASK),  // set the clock polarity to (idle-high, active-low). Otherwise is (idle-low, active-high).
@@ -141,51 +141,51 @@ typedef enum
     SPI_OPEN_FSP_HIGH =     _SPIxCON_MASK_(FRMPOL_MASK),    // FSP polarity set active high. Otherwise the FSP is active low.
     SPI_OPEN_FSP_CLK1 =     _SPIxCON_MASK_(SPIFE_MASK), // Set the FSP to coincide with the 1st bit clock.
                                         // Otherwise the FSP precedes the 1st bit clock
-    SPI_OPEN_FSP_WIDE =     _SPIxCON_MASK_(FRMSYPW_MASK),   // set the FSP one character wide. Otherwise the FSP is one clock wide.
+    //SPI_OPEN_FSP_WIDE =     _SPIxCON_MASK_(FRMSYPW_MASK),   // set the FSP one character wide. Otherwise the FSP is one clock wide.
 
-    SPI_OPEN_FRM_CNT1 =     (0 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the number of characters per frame (Frame Counter) to 1 (default)
-    SPI_OPEN_FRM_CNT2 =     (1 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the Frame Counter to 2
-    SPI_OPEN_FRM_CNT4 =     (2 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the Frame Counter to 4
-    SPI_OPEN_FRM_CNT8 =     (3 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the Frame Counter to 8
-    SPI_OPEN_FRM_CNT16 =    (4 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the Frame Counter to 16
-    SPI_OPEN_FRM_CNT32 =    (5 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the Frame Counter to 32
+   // SPI_OPEN_FRM_CNT1 =     (0 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the number of characters per frame (Frame Counter) to 1 (default)
+  //  SPI_OPEN_FRM_CNT2 =     (1 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the Frame Counter to 2
+   // SPI_OPEN_FRM_CNT4 =     (2 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the Frame Counter to 4
+   // SPI_OPEN_FRM_CNT8 =     (3 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the Frame Counter to 8
+   // SPI_OPEN_FRM_CNT16 =    (4 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the Frame Counter to 16
+   // SPI_OPEN_FRM_CNT32 =    (5 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the Frame Counter to 32
 
     // enhanced buffer (FIFO) opening mode
-    SPI_OPEN_ENHBUF =       _SPIxCON_MASK_(ENHBUF_MASK),    // enable the enhanced buffer mode
+   // SPI_OPEN_ENHBUF =       _SPIxCON_MASK_(ENHBUF_MASK),    // enable the enhanced buffer mode
 
-    SPI_OPEN_TBE_NOT_FULL =   (3 << _SPIxCON_MASK_(STXISEL_POSITION)),    // Tx Buffer event issued when Tx buffer not full (at least one slot empty)
-    SPI_OPEN_TBE_HALF_EMPTY = (2 << _SPIxCON_MASK_(STXISEL_POSITION)),    // Tx Buffer event issued when Tx buffer >= 1/2 empty
-    SPI_OPEN_TBE_EMPTY =      (1 << _SPIxCON_MASK_(STXISEL_POSITION)),    // Tx Buffer event issued when Tx buffer completely empty
-    SPI_OPEN_TBE_SR_EMPTY =   (0 << _SPIxCON_MASK_(STXISEL_POSITION)),    // Tx Buffer event issued when the last character is shifted out of the internal Shift Register
+    //SPI_OPEN_TBE_NOT_FULL =   (3 << _SPIxCON_MASK_(STXISEL_POSITION)),    // Tx Buffer event issued when Tx buffer not full (at least one slot empty)
+   // SPI_OPEN_TBE_HALF_EMPTY = (2 << _SPIxCON_MASK_(STXISEL_POSITION)),    // Tx Buffer event issued when Tx buffer >= 1/2 empty
+    //SPI_OPEN_TBE_EMPTY =      (1 << _SPIxCON_MASK_(STXISEL_POSITION)),    // Tx Buffer event issued when Tx buffer completely empty
+   // SPI_OPEN_TBE_SR_EMPTY =   (0 << _SPIxCON_MASK_(STXISEL_POSITION)),    // Tx Buffer event issued when the last character is shifted out of the internal Shift Register
                                             // and the transmit is complete
 
-    SPI_OPEN_RBF_FULL =      (3 << _SPIxCON_MASK_(SRXISEL_POSITION)),    // Rx Buffer event issued when RX buffer is full
-    SPI_OPEN_RBF_HALF_FULL = (2 << _SPIxCON_MASK_(SRXISEL_POSITION)),    // Rx Buffer event issued when RX buffer is >= 1/2 full
-    SPI_OPEN_RBF_NOT_EMPTY = (1 << _SPIxCON_MASK_(SRXISEL_POSITION)),    // Rx Buffer event issued when RX buffer is not empty
-    SPI_OPEN_RBF_EMPTY =     (0 << _SPIxCON_MASK_(SRXISEL_POSITION)),    // Rx Buffer event issued when RX buffer is empty (the last character in the buffer is read).
+   // SPI_OPEN_RBF_FULL =      (3 << _SPIxCON_MASK_(SRXISEL_POSITION)),    // Rx Buffer event issued when RX buffer is full
+   // SPI_OPEN_RBF_HALF_FULL = (2 << _SPIxCON_MASK_(SRXISEL_POSITION)),    // Rx Buffer event issued when RX buffer is >= 1/2 full
+   // SPI_OPEN_RBF_NOT_EMPTY = (1 << _SPIxCON_MASK_(SRXISEL_POSITION)),    // Rx Buffer event issued when RX buffer is not empty
+   // SPI_OPEN_RBF_EMPTY =     (0 << _SPIxCON_MASK_(SRXISEL_POSITION)),    // Rx Buffer event issued when RX buffer is empty (the last character in the buffer is read).
 
     // general opening mode
     SPI_OPEN_DISSDO = _SPIxCON_MASK_(DISSDO_MASK), // disable the usage of the SDO pin by the SPI
-    SPI_OPEN_DISSDI = _SPIxCON_MASK_(DISSDI_MASK), // disable the usage of the SDI pin by the SPI
+//    SPI_OPEN_DISSDI = _SPIxCON_MASK_(DISSDI_MASK), // disable the usage of the SDI pin by the SPI
     SPI_OPEN_SIDL =   _SPIxCON_MASK_(SIDL_MASK  ), // enable the Halt in the CPU Idle mode. Otherwise the SPI will be still active when the CPU is in Idle mode.
     SPI_OPEN_ON =     _SPIxCON_MASK_(ON_MASK    ), // turn ON the SPI (not used in SpiChnOpen)
 }SpiOpenFlags;  // open flags that can be used with SpiChnOpen. Defined in the processor header file.
 
 typedef enum {
-    SPI_OPEN2_SPISGNEXT = _SPIxCON2_MASK_(SPISGNEXT_MASK), // Sign Extend Read Data from the RX FIFO bit
-    SPI_OPEN2_FRMERREN  = _SPIxCON2_MASK_(FRMERREN_MASK),  // Enable Interrupt Events via FRMERR bit
-    SPI_OPEN2_SPIROVEN  = _SPIxCON2_MASK_(SPIROVEN_MASK),  // Enable Interrupt Events via SPIROV bit
-    SPI_OPEN2_SPITUREN  = _SPIxCON2_MASK_(SPITUREN_MASK),  // Enable Interrupt Events via SPITUR bit
-    SPI_OPEN2_IGNROV    = _SPIxCON2_MASK_(IGNROV_MASK),    // Ignore Receive Overflow bit (for Audio Data Transmissions):
-    SPI_OPEN2_IGNTUR    = _SPIxCON2_MASK_(IGNTUR_MASK),    // Ignore Transmit Underrun bit (for Audio Data Transmissions)
-    SPI_OPEN2_AUDEN     = _SPIxCON2_MASK_(AUDEN_MASK),     // Enable Audio CODEC Support bit
-    SPI_OPEN2_AUDMONO   = _SPIxCON2_MASK_(AUDMONO_MASK),   // Transmit monoaural, i.e. left channel = right channel
-    SPI_OPEN2_AUDMOD    = _SPIxCON2_MASK_(AUDMOD_MASK),    // Audio Protocol Mode bits
-    SPI_OPEN2_AUDMOD_DSP =  _SPIxCON2_MASK_(AUDMOD_MASK),    // Audio Protocol Mode bits = 11 => PCM/DSP mode
-    SPI_OPEN2_AUDMOD0   = _SPIxCON2_MASK_(AUDMOD0_MASK),   // Audio Protocol Mode bits, Bit 0
-    SPI_OPEN2_AUDMOD_LJ = _SPIxCON2_MASK_(AUDMOD0_MASK),   // Audio Protocol Mode bits, Bit 0 = 1 => Left Justified mode
-    SPI_OPEN2_AUDMOD1   = _SPIxCON2_MASK_(AUDMOD1_MASK),   // Audio Protocol Mode bits, Bit 1
-    SPI_OPEN2_AUDMOD_RJ = _SPIxCON2_MASK_(AUDMOD1_MASK),   // Audio Protocol Mode bits, Bit 1 = 1 => Right Justified mode
+//    SPI_OPEN2_SPISGNEXT = _SPIxCON2_MASK_(SPISGNEXT_MASK), // Sign Extend Read Data from the RX FIFO bit
+//    SPI_OPEN2_FRMERREN  = _SPIxCON2_MASK_(FRMERREN_MASK),  // Enable Interrupt Events via FRMERR bit
+//    SPI_OPEN2_SPIROVEN  = _SPIxCON2_MASK_(SPIROVEN_MASK),  // Enable Interrupt Events via SPIROV bit
+//    SPI_OPEN2_SPITUREN  = _SPIxCON2_MASK_(SPITUREN_MASK),  // Enable Interrupt Events via SPITUR bit
+//    SPI_OPEN2_IGNROV    = _SPIxCON2_MASK_(IGNROV_MASK),    // Ignore Receive Overflow bit (for Audio Data Transmissions):
+//    SPI_OPEN2_IGNTUR    = _SPIxCON2_MASK_(IGNTUR_MASK),    // Ignore Transmit Underrun bit (for Audio Data Transmissions)
+//    SPI_OPEN2_AUDEN     = _SPIxCON2_MASK_(AUDEN_MASK),     // Enable Audio CODEC Support bit
+//    SPI_OPEN2_AUDMONO   = _SPIxCON2_MASK_(AUDMONO_MASK),   // Transmit monoaural, i.e. left channel = right channel
+//    SPI_OPEN2_AUDMOD    = _SPIxCON2_MASK_(AUDMOD_MASK),    // Audio Protocol Mode bits
+ //   SPI_OPEN2_AUDMOD_DSP =  _SPIxCON2_MASK_(AUDMOD_MASK),    // Audio Protocol Mode bits = 11 => PCM/DSP mode
+//    SPI_OPEN2_AUDMOD0   = _SPIxCON2_MASK_(AUDMOD0_MASK),   // Audio Protocol Mode bits, Bit 0
+//    SPI_OPEN2_AUDMOD_LJ = _SPIxCON2_MASK_(AUDMOD0_MASK),   // Audio Protocol Mode bits, Bit 0 = 1 => Left Justified mode
+//    SPI_OPEN2_AUDMOD1   = _SPIxCON2_MASK_(AUDMOD1_MASK),   // Audio Protocol Mode bits, Bit 1
+ //   SPI_OPEN2_AUDMOD_RJ = _SPIxCON2_MASK_(AUDMOD1_MASK),   // Audio Protocol Mode bits, Bit 1 = 1 => Right Justified mode
     SPI_OPEN2_AUDMOD_I2S = 0x0,                            // Audio Protocol Mode bits = 0x0 => I2S mode
 } SpiOpen2Flags;
 
@@ -195,10 +195,10 @@ typedef enum
     SPI_STAT_SPITBF =  _SPIxSTAT_MASK_(SPITBF_MASK),   // transmit buffer full
     SPI_STAT_SPITBE =  _SPIxSTAT_MASK_(SPITBE_MASK),   // transmit buffer empty
     SPI_STAT_SPIRBE =  _SPIxSTAT_MASK_(SPIRBE_MASK),   // receive buffer empty
-    SPI_STAT_FRMERR =  _SPIxSTAT_MASK_(FRMERR_MASK),   // receive buffer empty
+//    SPI_STAT_FRMERR =  _SPIxSTAT_MASK_(FRMERR_MASK),   // receive buffer empty
     SPI_STAT_SPIROV =  _SPIxSTAT_MASK_(SPIROV_MASK),   // receive overflow
-    SPI_STAT_SPISRMT = _SPIxSTAT_MASK_(SRMT_MASK),     // shift register empty
-    SPI_STAT_SPITUR =  _SPIxSTAT_MASK_(SPITUR_MASK),   // transmit underrun
+//    SPI_STAT_SPISRMT = _SPIxSTAT_MASK_(SRMT_MASK),     // shift register empty
+//    SPI_STAT_SPITUR =  _SPIxSTAT_MASK_(SPITUR_MASK),   // transmit underrun
     SPI_STAT_SPIBUSY = _SPIxSTAT_MASK_(SPIBUSY_MASK),  // busy with transaction
 }SpiStatusFlags;        // possible SPI status flags
 
@@ -792,7 +792,7 @@ typedef enum
     // master configuration
     SPI_CONFIG_MSTEN =      _SPIxCON_MASK_(MSTEN_MASK), // set the Master mode
     SPI_CONFIG_SMP_END =    _SPIxCON_MASK_(SMP_MASK),   // Master Sample Phase for the input bit at the end of the data out time. Otherwise data is sampled in the middle.
-    SPI_CONFIG_MSSEN =      _SPIxCON_MASK_(MSSEN_MASK), // enable the driving of the Slave Select (SS) output pin by the Master
+    SPI_CONFIG_MSSEN =      _SPIxCON_MASK_(SSEN_MASK), // enable the driving of the Slave Select (SS) output pin by the Master
     SPI_CONFIG_MSSEN_HIGH = _SPIxCON_MASK_(FRMPOL_MASK),// Master driven SS output active high. Otherwise low.
 
     // slave configuration
@@ -815,52 +815,51 @@ typedef enum
     SPI_CONFIG_FSP_HIGH = _SPIxCON_MASK_(FRMPOL_MASK),    // FSP polarity set active high. Otherwise the FSP is active low.
     SPI_CONFIG_FSP_CLK1 = _SPIxCON_MASK_(SPIFE_MASK), // Set the FSP to coincide with the 1st bit clock.
                                   // Otherwise the FSP precedes the 1st bit clock
-    SPI_CONFIG_FSP_WIDE = _SPIxCON_MASK_(FRMSYPW_MASK),   // set the FSP one character wide. Otherwise the FSP is one clock wide.
+//    SPI_CONFIG_FSP_WIDE = _SPIxCON_MASK_(FRMSYPW_MASK),   // set the FSP one character wide. Otherwise the FSP is one clock wide.
 
-    SPI_CONFIG_FRM_CNT1 =  (0 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the number of characters per frame (Frame Counter) to 1 (default)
-    SPI_CONFIG_FRM_CNT2 =  (1 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the Frame Counter to 2
-    SPI_CONFIG_FRM_CNT4 =  (2 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the Frame Counter to 4
-    SPI_CONFIG_FRM_CNT8 =  (3 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the Frame Counter to 8
-    SPI_CONFIG_FRM_CNT16 = (4 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the Frame Counter to 16
-    SPI_CONFIG_FRM_CNT32 = (5 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the Frame Counter to 32
+//    SPI_CONFIG_FRM_CNT1 =  (0 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the number of characters per frame (Frame Counter) to 1 (default)
+  //  SPI_CONFIG_FRM_CNT2 =  (1 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the Frame Counter to 2
+ //   SPI_CONFIG_FRM_CNT4 =  (2 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the Frame Counter to 4
+ //   SPI_CONFIG_FRM_CNT8 =  (3 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the Frame Counter to 8
+ //   SPI_CONFIG_FRM_CNT16 = (4 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the Frame Counter to 16
+ //   SPI_CONFIG_FRM_CNT32 = (5 << _SPIxCON_MASK_(FRMCNT_POSITION)), // set the Frame Counter to 32
 
     // enhanced buffer (FIFO) configuration
-    SPI_CONFIG_ENHBUF =         _SPIxCON_MASK_(ENHBUF_MASK),    // enable the enhanced buffer mode
+//    SPI_CONFIG_ENHBUF =         _SPIxCON_MASK_(ENHBUF_MASK),    // enable the enhanced buffer mode
 
-    SPI_CONFIG_TBE_NOT_FULL =   (3 << _SPIxCON_MASK_(STXISEL_POSITION)),    // Tx Buffer event issued when Tx buffer not full (at least one slot empty)
-    SPI_CONFIG_TBE_HALF_EMPTY = (2 << _SPIxCON_MASK_(STXISEL_POSITION)),    // Tx Buffer event issued when Tx buffer >= 1/2 empty
-    SPI_CONFIG_TBE_EMPTY =      (1 << _SPIxCON_MASK_(STXISEL_POSITION)),    // Tx Buffer event issued when Tx buffer completely empty
-    SPI_CONFIG_TBE_SR_EMPTY =   (0 << _SPIxCON_MASK_(STXISEL_POSITION)),    // Tx Buffer event issued when the last character is shifted out of the internal Shift Register
+//    SPI_CONFIG_TBE_NOT_FULL =   (3 << _SPIxCON_MASK_(STXISEL_POSITION)),    // Tx Buffer event issued when Tx buffer not full (at least one slot empty)
+ //   SPI_CONFIG_TBE_HALF_EMPTY = (2 << _SPIxCON_MASK_(STXISEL_POSITION)),    // Tx Buffer event issued when Tx buffer >= 1/2 empty
+ //   SPI_CONFIG_TBE_EMPTY =      (1 << _SPIxCON_MASK_(STXISEL_POSITION)),    // Tx Buffer event issued when Tx buffer completely empty
+ //   SPI_CONFIG_TBE_SR_EMPTY =   (0 << _SPIxCON_MASK_(STXISEL_POSITION)),    // Tx Buffer event issued when the last character is shifted out of the internal Shift Register
                                             // and the transmit is complete
 
-    SPI_CONFIG_RBF_FULL =       (3 << _SPIxCON_MASK_(SRXISEL_POSITION)),    // Rx Buffer event issued when RX buffer is full
-    SPI_CONFIG_RBF_HALF_FULL =  (2 << _SPIxCON_MASK_(SRXISEL_POSITION)),    // Rx Buffer event issued when RX buffer is >= 1/2 full
-    SPI_CONFIG_RBF_NOT_EMPTY =  (1 << _SPIxCON_MASK_(SRXISEL_POSITION)),    // Rx Buffer event issued when RX buffer is not empty
-    SPI_CONFIG_RBF_EMPTY =      (0 << _SPIxCON_MASK_(SRXISEL_POSITION)),    // Rx Buffer event issued when RX buffer is empty (the last character in the buffer is read).
+ //   SPI_CONFIG_RBF_FULL =       (3 << _SPIxCON_MASK_(SRXISEL_POSITION)),    // Rx Buffer event issued when RX buffer is full
+ //   SPI_CONFIG_RBF_HALF_FULL =  (2 << _SPIxCON_MASK_(SRXISEL_POSITION)),    // Rx Buffer event issued when RX buffer is >= 1/2 full
+ //   SPI_CONFIG_RBF_NOT_EMPTY =  (1 << _SPIxCON_MASK_(SRXISEL_POSITION)),    // Rx Buffer event issued when RX buffer is not empty
+ //   SPI_CONFIG_RBF_EMPTY =      (0 << _SPIxCON_MASK_(SRXISEL_POSITION)),    // Rx Buffer event issued when RX buffer is empty (the last character in the buffer is read).
 
     // general configuration
     SPI_CONFIG_DISSDO = _SPIxCON_MASK_(DISSDO_MASK), // disable the usage of the SDO pin by the SPI
-    SPI_CONFIG_DISSDI = _SPIxCON_MASK_(DISSDI_MASK), // disable the usage of the SDI pin by the SPI
+//    SPI_CONFIG_DISSDI = _SPIxCON_MASK_(DISSDI_MASK), // disable the usage of the SDI pin by the SPI
     SPI_CONFIG_SIDL =   _SPIxCON_MASK_(SIDL_MASK),   // enable the Halt in the CPU Idle mode. Otherwise the SPI will be still active when the CPU is in Idle mode.
     SPI_CONFIG_ON =     _SPIxCON_MASK_(ON_MASK),     // turn ON the SPI (not used in SpiChnOpen)
 } SpiConfigFlags;    // configuration flags that can be used with SpiChnConfigure. Defined in the processor header file.
 
 typedef enum {
-    SPI_CONFIG2_SPISGNEXT = _SPIxCON2_MASK_(SPISGNEXT_MASK), // Sign Extend Read Data from the RX FIFO bit
-    SPI_CONFIG2_FRMERREN  = _SPIxCON2_MASK_(FRMERREN_MASK),  // Enable Interrupt Events via FRMERR bit
-    SPI_CONFIG2_SPIROVEN  = _SPIxCON2_MASK_(SPIROVEN_MASK),  // Enable Interrupt Events via SPIROV bit
-    SPI_CONFIG2_SPITUREN  = _SPIxCON2_MASK_(SPITUREN_MASK),  // Enable Interrupt Events via SPITUR bit
-    SPI_CONFIG2_IGNROV    = _SPIxCON2_MASK_(IGNROV_MASK),    // Ignore Receive Overflow bit (for Audio Data Transmissions):
-    SPI_CONFIG2_IGNTUR    = _SPIxCON2_MASK_(IGNTUR_MASK),    // Ignore Transmit Underrun bit (for Audio Data Transmissions)
-    SPI_CONFIG2_AUDEN     = _SPIxCON2_MASK_(AUDEN_MASK),     // Enable Audio CODEC Support bit
-    SPI_CONFIG2_AUDMONO   = _SPIxCON2_MASK_(AUDMONO_MASK),   // Transmit monoaural, i.e. left channel = right channel
-    SPI_CONFIG2_AUDMOD    = _SPIxCON2_MASK_(AUDMOD_MASK),    // Audio Protocol Mode bits
-    SPI_CONFIG2_AUDMOD_DSP =
-                          _SPIxCON2_MASK_(AUDMOD_MASK),    // Audio Protocol Mode bits = 11 => PCM/DSP mode
-    SPI_CONFIG2_AUDMOD0   = _SPIxCON2_MASK_(AUDMOD0_MASK),   // Audio Protocol Mode bits, Bit 0
-    SPI_CONFIG2_AUDMOD_LJ = _SPIxCON2_MASK_(AUDMOD0_MASK),   // Audio Protocol Mode bits, Bit 0 = 1 => Left Justified mode
-    SPI_CONFIG2_AUDMOD1   = _SPIxCON2_MASK_(AUDMOD1_MASK),   // Audio Protocol Mode bits, Bit 1
-    SPI_CONFIG2_AUDMOD_RJ = _SPIxCON2_MASK_(AUDMOD1_MASK),   // Audio Protocol Mode bits, Bit 1 = 1 => Right Justified mode
+//    SPI_CONFIG2_SPISGNEXT = _SPIxCON2_MASK_(SPISGNEXT_MASK), // Sign Extend Read Data from the RX FIFO bit
+//    SPI_CONFIG2_FRMERREN  = _SPIxCON2_MASK_(FRMERREN_MASK),  // Enable Interrupt Events via FRMERR bit
+//    SPI_CONFIG2_SPIROVEN  = _SPIxCON2_MASK_(SPIROVEN_MASK),  // Enable Interrupt Events via SPIROV bit
+//    SPI_CONFIG2_SPITUREN  = _SPIxCON2_MASK_(SPITUREN_MASK),  // Enable Interrupt Events via SPITUR bit
+//    SPI_CONFIG2_IGNROV    = _SPIxCON2_MASK_(IGNROV_MASK),    // Ignore Receive Overflow bit (for Audio Data Transmissions):
+//    SPI_CONFIG2_IGNTUR    = _SPIxCON2_MASK_(IGNTUR_MASK),    // Ignore Transmit Underrun bit (for Audio Data Transmissions)
+//    SPI_CONFIG2_AUDEN     = _SPIxCON2_MASK_(AUDEN_MASK),     // Enable Audio CODEC Support bit
+//    SPI_CONFIG2_AUDMONO   = _SPIxCON2_MASK_(AUDMONO_MASK),   // Transmit monoaural, i.e. left channel = right channel
+//    SPI_CONFIG2_AUDMOD    = _SPIxCON2_MASK_(AUDMOD_MASK),    // Audio Protocol Mode bits
+//    SPI_CONFIG2_AUDMOD_DSP = _SPIxCON2_MASK_(AUDMOD_MASK),    // Audio Protocol Mode bits = 11 => PCM/DSP mode
+//    SPI_CONFIG2_AUDMOD0   = _SPIxCON2_MASK_(AUDMOD0_MASK),   // Audio Protocol Mode bits, Bit 0
+ //   SPI_CONFIG2_AUDMOD_LJ = _SPIxCON2_MASK_(AUDMOD0_MASK),   // Audio Protocol Mode bits, Bit 0 = 1 => Left Justified mode
+//    SPI_CONFIG2_AUDMOD1   = _SPIxCON2_MASK_(AUDMOD1_MASK),   // Audio Protocol Mode bits, Bit 1
+//    SPI_CONFIG2_AUDMOD_RJ = _SPIxCON2_MASK_(AUDMOD1_MASK),   // Audio Protocol Mode bits, Bit 1 = 1 => Right Justified mode
     SPI_CONFIG2_AUDMOD_I2S = 0x0,                            // Audio Protocol Mode bits = 0x0 => I2S mode
 } SpiConfig2Flags;
 

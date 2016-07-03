@@ -17,12 +17,15 @@
 
 #include "GenericTypeDefs.h"
 #include "I2C_HardwareDrvr.h"
+#include "Delay_32.h"
+
 #if(I2C_DEBUG == 1)
 #include "uart2.h"
 #endif
 
 
-
+#define GetSystemClock()        (80000000ul)
+#define GetPeripheralClock()    (GetSystemClock() / (1 << OSCCONbits.PBDIV))
 
 
 void drvI2CInit(void) {                                                         // Initialization Function
@@ -69,8 +72,10 @@ UINT8 address;
 UINT8 status;
 UINT8 count = 0;
 
+int iTestbit = 0;
+
 drvI2CInit();
-printf("\n\rStart:\n\r");
+//printf((const char *)"\n\rStart:\n\r");
 
 delay_ms(1000);
 
@@ -82,7 +87,7 @@ for(address=0x10; address < 0xF0; address+=2)
     status = get_ack_status(address);
     if(status == TRUE)
       {
-       printf("ACK addr: %X\n\r", address);
+       //printf((const char *)"ACK addr: %X\n\r", address);
        count++;
        ucAddressArray_ref[count] = address;
        delay_ms(2000);
@@ -90,9 +95,11 @@ for(address=0x10; address < 0xF0; address+=2)
    }
 
 if(count == 0)
-   printf("\n\rNothing Found");
+    iTestbit = 0;
+   //printf((const char *)"\n\rNothing Found");
 else
-   printf("\n\rNumber of i2c chips found: %u", count);
+    iTestbit = 1;
+   //printf((const char *)"\n\rNumber of i2c chips found: %u", count);
 
 return count;
 }

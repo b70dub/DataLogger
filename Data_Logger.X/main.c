@@ -1,19 +1,19 @@
 /*******************************************************************************
 * File: Main.c
-* Author: Armstrong Subero
-* PIC: 32MX230F064B @ 40MHz, 3.3v
-* Program: PIC32 Based Data Logger
-* Compiler: XC32 (v1.33, MPLABX v2.30)
-* Created On: February 14th, 2015, 9:40 PM
-* Description: This file demonstrates logging data to an SD card that is read
-*               from an analog input channel on AN3 (PINB1)
+* Author: Brian Ankeny
+* PIC: 32MX440F256H @ 80MHz, 3.3v
+* Compiler: XC32 (v1.4, MPLAB X v2.20)
+* Program Version 0.0.0.1
+* Program Description: This file demonstrates logging data to an SD card that is
+ *                      read from two MMA8452 accelerometers
+*            
 *
-* Modified From:NBIIFS from microchip forums, modified to run on PIC32MX230F064B
+* Modified From:NBIIFS from microchip forums, modified to run on 32MX440F256H
 *               and log integer as well as text values.
 *               All Rights belong to their respective owners.
-* Dependencies: "NOKIA5110.h", "MX230_STD.h", "Delay_32.h", "Bitmaps.h"
-* Tested on: 32MX230F064B @ 40MHz
-* Version: 1.0
+* Dependencies: "HardwareProfile.h", "Delay_32.h"
+* Tested on: 32MX440F256H @ 80MHz
+
 *
 * An SD card (sparkfun SD/MMC breakout) is connected to
 *                     the microcontroller in the following configuration:
@@ -29,12 +29,6 @@
 *                    D1         --> NC
 *                    WP         --> NC
 *
-* A Nokia5110 is connected to SPI2 and configuration is to be found in the
-* 5110_SPI2.h header file
-*
-* A 4MHz crystal is connected to OSC1
-*
-* An LM34 temperature sensor is connected to PINB1
 */
 
 /*******************************************************************************
@@ -48,16 +42,28 @@
 
 #include "MMA8452_Config.h"
 #include "HardwareProfile.h"
-#include "Delay_32.h"
-//#include "5110_SPI2.h"
-//#include "32_ADC.h"
+
 #include "ff.h"
 #include "SystemTimer.h"
+#include "GLOBAL_VARS.h"
 
 //#define GetSystemClock() (40000000ul)
 #define GetSystemClock()        (80000000ul) //pic32 runs at 80mHz
 #define TOGGLES_PER_SEC   1000
 #define CORE_TICK_RATE   (GetSystemClock()/2/TOGGLES_PER_SEC)
+
+#define mPORTBClearBits(_bits) { LATB &= ~(unsigned int)_bits;}/*Clears PortB bit*/
+#define mPORTCClearBits(_bits) { LATC &= ~(unsigned int)_bits;}/*Clears PortC bit*/
+#define mPORTDClearBits(_bits) { LATD &= ~(unsigned int)_bits;}/*Clears PortD bit*/
+#define mPORTEClearBits(_bits) { LATE &= ~(unsigned int)_bits;}/*Clears PortE bit*/
+#define mPORTFClearBits(_bits) { LATF &= ~(unsigned int)_bits;}/*Clears PortF bit*/
+
+#define mPORTBSetBits(_bits) { LATB |= (unsigned int)_bits;} /*Set PortB bit*/
+#define mPORTCSetBits(_bits) { LATC |= (unsigned int)_bits;} /*Set PortC bit*/
+#define mPORTDSetBits(_bits) { LATD |= (unsigned int)_bits;} /*Set PortD bit*/
+#define mPORTESetBits(_bits) { LATE |= (unsigned int)_bits;} /*Set PortE bit*/
+#define mPORTFSetBits(_bits) { LATF |= (unsigned int)_bits;} /*Set PortF bit*/
+
 
 /*******************************************************************************
  Program global variables
@@ -72,9 +78,19 @@
  
  UINT len;          //needed for writing file
 //volatile unsigned int
- volatile UINT8 DataReady1, DataReady2, TimeUpdated; //Flags for accelerometer interrupts
+ volatile UINT8  TimeUpdated; //Flags for accelerometer interrupts
 
- 
+ /******************************************************************************
+* Sytem Timer - variables and constants
+******************************************************************************/
+volatile int irtc_mSec;
+volatile BYTE rtcYear = 111, rtcMon = 11, rtcMday = 22;    // RTC date values
+volatile BYTE rtcHour = 0, rtcMin = 0, rtcSec = 0;    // RTC time values
+volatile unsigned long tick;                               // Used for ISR
+
+struct Timer TestCycleTimer,LogTimer1,LogTimer2;
+struct TimeStamp TNow;
+
 
  //Accell data variables
  SHORT X1out_12_bit, Y1out_12_bit, Z1out_12_bit, X2out_12_bit, Y2out_12_bit, Z2out_12_bit;
@@ -91,6 +107,7 @@ const BYTE ft[] = {0,12,16,32};
 FATFS Fatfs;
 FATFS *fs;            /* Pointer to file system object */
 FIL file1, file2;      /* File objects */
+
 
 
 /* Interrupt service routine of external int 1    */
@@ -189,6 +206,80 @@ DWORD get_fattime(void)
    return tmr;
 }
 
+/*********************************************************************
+ * Function:        void Func_InitializeBoard(void)
+ * PreCondition:
+ * Input:           None
+ * Output:          None
+ * Side Effects:
+ * Overview:     Used to initialize board parameters
+ * Note:
+ ********************************************************************/
+void Func_InitializeBoard(){
+    
+    //Setup interrupts
+ //removed temporarily
+ //ConfigINT1(EXT_INT_PRI_2 | RISING_EDGE_INT | EXT_INT_ENABLE); // Config INT1              //Acellerometer 1 : Data Ready
+
+// ConfigINT4(EXT_INT_PRI_2 | RISING_EDGE_INT | EXT_INT_ENABLE); // Config INT4              //Acellerometer 2 : Data Ready
+
+ INTConfigureSystem(INT_SYSTEM_CONFIG_MULT_VECTOR);
+ INTEnableInterrupts();
+
+// Enable optimal performance
+INTEnableSystemMultiVectoredInt();
+SYSTEMConfigPerformance(GetSystemClock());
+mOSCSetPBDIV(OSC_PB_DIV_1);            // Use 1:1 CPU Core:Peripheral clocks
+OpenCoreTimer(CORE_TICK_RATE);         // Open 1 ms Timer
+
+
+// set up the core timer interrupt with a priority of 2 and zero sub-priority
+mConfigIntCoreTimer((CT_INT_ON | CT_INT_PRIOR_2 | CT_INT_SUB_PRIOR_0));
+
+//Pin Config
+AD1PCFG = 0xFFFE;        //set all AN pins to digital except AN0
+        
+//Set Pin Directions
+TRISB = 0b1000000000100001;       //AREF, VBUSON, USB_Fault set to input
+TRISCbits.TRISC13 = 0;              
+TRISCbits.TRISC14 = 0;
+TRISD = 0b1000011000100001;       //BUT, SDA, SCL set to input
+TRISE = 0x0000;
+TRISFbits.TRISF1 = 0;
+//TRISF = 0x0000;
+//
+
+// Set pin Values
+LATB = 0x0000;
+LATCbits.LATC13 = 0;
+LATCbits.LATC14 = 0;  
+LATD = 0x0000;
+LATE = 0x0000;
+LATFbits.LATF1 = 0; 
+
+}
+
+/*********************************************************************
+ * Function:        void Func_ShowImAlive(void)
+ * PreCondition:
+ * Input:           None
+ * Output:          None
+ * Side Effects:
+ * Overview:     Used to blink LED2 to indicate running state
+ * Note:
+ ********************************************************************/
+void Func_ShowImAlive(){
+    int iTempCount;
+    for(iTempCount = 0; iTempCount <= 5; iTempCount++){
+        LATDbits.LATD1 = 1; 
+        delay_ms (500);
+        LATDbits.LATD1 = 0; 
+        delay_ms (500);
+    }
+    
+}
+
+
 /*******************************************************************************
 * Function: int main()
 *
@@ -201,15 +292,15 @@ DWORD get_fattime(void)
 
 int main (void)
 {
-//Initialize the current time Struct
-TNow = func_InitializeTime(TNow);
+    
+//Initialize the board
+//Func_InitializeBoard();
+    
+   //Setup interrupts
+ //removed temporarily
+ //ConfigINT1(EXT_INT_PRI_2 | RISING_EDGE_INT | EXT_INT_ENABLE); // Config INT1              //Acellerometer 1 : Data Ready
 
-
-//Setup interrupts
- //ConfigINT0(EXT_INT_PRI_2 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT0
- ConfigINT1(EXT_INT_PRI_2 | RISING_EDGE_INT | EXT_INT_ENABLE); // Config INT1              //Acellerometer 1 : Data Ready
- //ConfigINT3(EXT_INT_PRI_2 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT3
- ConfigINT4(EXT_INT_PRI_2 | RISING_EDGE_INT | EXT_INT_ENABLE); // Config INT4              //Acellerometer 2 : Data Ready
+// ConfigINT4(EXT_INT_PRI_2 | RISING_EDGE_INT | EXT_INT_ENABLE); // Config INT4              //Acellerometer 2 : Data Ready
 
  INTConfigureSystem(INT_SYSTEM_CONFIG_MULT_VECTOR);
  INTEnableInterrupts();
@@ -221,19 +312,48 @@ mOSCSetPBDIV(OSC_PB_DIV_1);            // Use 1:1 CPU Core:Peripheral clocks
 OpenCoreTimer(CORE_TICK_RATE);         // Open 1 ms Timer
 
 
-// set up the core timer interrupt with a prioirty of 2 and zero sub-priority
+// set up the core timer interrupt with a priority of 2 and zero sub-priority
 mConfigIntCoreTimer((CT_INT_ON | CT_INT_PRIOR_2 | CT_INT_SUB_PRIOR_0));
 
+//Pin Config
+AD1PCFG = 0xFFFE;        //set all AN pins to digital except AN0
+        
+//Set Pin Directions
+TRISB = 0b1000000000100001;       //AREF, VBUSON, USB_Fault set to input
+TRISCbits.TRISC13 = 0;              
+TRISCbits.TRISC14 = 0;
+TRISD = 0b1000011000100001;       //BUT, SDA, SCL set to input
+TRISE = 0x0000;
+TRISFbits.TRISF1 = 0;
+//TRISF = 0x0000;
+//
 
+// Set pin Values
+LATB = 0x0000;
+LATCbits.LATC13 = 0;
+LATCbits.LATC14 = 0;  
+LATD = 0x0000;
+LATE = 0x0000;
+LATFbits.LATF1 = 0; 
+
+//Initialize the current time Struct and other timer vars
+//struct TimeStamp TNow;
+func_InitializeTime(&TNow);
 
 //Scan the network for connected devices - if detected then allow trying to
 // read from them.
 //============================================================================//
 iDeviceCount = ScanNetwork();
 
+//Blink the LED on power-up
+Func_ShowImAlive();
 
-printf ((const char *)"Reading Values \r\n");
-    //printf ((const rom far char *)"iInputValue = %d \r\n", iInputValue);
+
+
+
+
+//printf((const char *)"Reading Values \r\n");
+    //printf ((const char *)"iInputValue = %d \r\n", iInputValue);
 if(0 < iDeviceCount)  //initializes the i2c netwrk and scans for devices
 {
     //Now Initialise and calibrate each MMA8452
@@ -245,17 +365,18 @@ if(0 < iDeviceCount)  //initializes the i2c netwrk and scans for devices
 
     //Initialize the timers
     //========================================================================//
-    *TestCycleTimer.StartTime = TNow;                                            //Main cycle timer
+   // TestCycleTimer.StartTime = Func_StartTimer(TestCycleTimer);
+    TestCycleTimer.StartTime = TNow;                                            //Main cycle timer
     TestCycleTimer.Setpt.hr = 1;
-    func_GetRemainingTime(ptrTestCycleTimer);
+    func_GetRemainingTime(&TestCycleTimer, &TNow);
 
     LogTimer1.StartTime = TNow;
     LogTimer1.Setpt.sec = 30;
-    func_GetRemainingTime(ptrLogTimer1);
+    func_GetRemainingTime(&LogTimer1, &TNow);
 
     LogTimer2.StartTime = TNow;
     LogTimer2.Setpt.sec = 30;
-    func_GetRemainingTime(ptrLogTimer2);
+    func_GetRemainingTime(&LogTimer2, &TNow);
 
     while(!TestCycleTimer.TimerComplete)
     {
@@ -264,10 +385,10 @@ if(0 < iDeviceCount)  //initializes the i2c netwrk and scans for devices
         if(TimeUpdated == 1)
         {
             TimeUpdated = 0;
-            Func_UpdateSystemTime();
-            func_GetRemainingTime(ptrTestCycleTimer);
-            func_GetRemainingTime(ptrLogTimer1);
-            func_GetRemainingTime(ptrLogTimer2);
+            Func_UpdateSystemTime(&TNow, rtcYear, rtcMon, rtcMday, rtcHour, rtcMin, rtcSec, irtc_mSec);
+            func_GetRemainingTime(&TestCycleTimer, &TNow);
+            func_GetRemainingTime(&LogTimer1, &TNow);
+            func_GetRemainingTime(&LogTimer2, &TNow);
         }
 
         //Check if data is ready on either accelerometer
@@ -281,7 +402,7 @@ if(0 < iDeviceCount)  //initializes the i2c netwrk and scans for devices
      
                  if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1))                // Read data output registers 0x01-0x06
                  {
-                     printf("\r\n\r\n Acc 1 data ready");
+                     //printf((const char *)"\r\n\r\n Acc 1 data ready");
 
                      // 12-bit accelerometer data
                      X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
@@ -295,7 +416,7 @@ if(0 < iDeviceCount)  //initializes the i2c netwrk and scans for devices
 
                      if(LogTimer1.TimerComplete)
                      {
-                         printf ("\r\n\r\n Acc 1 x_out = %f, y_out = %f, z_out = %f ", X2out_g, Y2out_g, Z2out_g);
+                         //printf ((const char *)"\r\n\r\n Acc 1 x_out = %f, y_out = %f, z_out = %f ", X2out_g, Y2out_g, Z2out_g);
                          LogTimer1.StartTime = TNow;
                      }
                  }
@@ -307,7 +428,7 @@ if(0 < iDeviceCount)  //initializes the i2c netwrk and scans for devices
 
                  if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1))                // Read data output registers 0x01-0x06
                  {
-                     printf("\r\n\r\n Acc 2 data ready");
+                     //printf((const char *)"\r\n\r\n Acc 2 data ready");
 
                      // 12-bit accelerometer data
                      X2out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
@@ -321,7 +442,7 @@ if(0 < iDeviceCount)  //initializes the i2c netwrk and scans for devices
 
                      if(LogTimer2.TimerComplete)
                      {
-                         printf ("\r\n\r\n Acc 2 x_out = %f, y_out = %f, z_out = %f ", X2out_g, Y2out_g, Z2out_g);
+                         //printf ((const char *)"\r\n\r\n Acc 2 x_out = %f, y_out = %f, z_out = %f ", X2out_g, Y2out_g, Z2out_g);
 
                          LogTimer2.StartTime = TNow;
                      }
@@ -333,14 +454,14 @@ if(0 < iDeviceCount)  //initializes the i2c netwrk and scans for devices
 
 
 //Alert user card being initilized
- printf ((const char *)"Init SDCARD \r\n");
+ //printf ((const char *)"Init SDCARD \r\n");
 delay_ms (50);
 
 //Initialize Disk
 disk_initialize(0);
 
 //Aert user SD card is being mounted
-printf ((const char *)"Mount SDCARD \r\n");
+//printf ((const char *)"Mount SDCARD \r\n");
 delay_ms(50);
 
 //Mount Filesystem
@@ -358,11 +479,12 @@ delay_ms(100);
 //LCD5110_send(0x80 + 0, 0); //X address
 //LCD5110_sendString ("Writing Data");
 
-printf ((const char *)"Writing Data \r\n");
+//printf ((const char *)"Writing Data \r\n");
 
 //write data to data1.txt
 for (iTempCount = 0; iTempCount < 1440; iTempCount++){
-    unsigned char buf[8];
+    //unsigned char buf[8];
+    unsigned char buf[12];
 
     //convert values[] to ascii
     //itoa(buf, values[iTempCount], 10);
@@ -372,20 +494,23 @@ for (iTempCount = 0; iTempCount < 1440; iTempCount++){
     //const char *text2 = buf;
 
     //convert values[] to ascii and pass back a pointer to the result string ---------------- BTA modified so test it!!!
-    const char *text2 = itoa(values[iTempCount]);
+    //const char *text2 = itoa(values[iTempCount]);
+    My_itoa(values[iTempCount], buf, sizeof(buf));
+
     //write that value into text file
-    f_write(&file1, text2, strlen(text2), &len);
+    //f_write(&file1, text2, strlen(text2), &len);
+    f_write(&file1, buf, strlen(buf), &len);
  }
 
 
 //Alert user file is closing
-printf ((const char *)"Close File \r\n");
+//printf ((const char *)"Close File \r\n");
 
 //Close data.txt
 f_close(&file1);
 
 //Alert user card is unmounting
-printf ((const char *)"SD Card Unmounted \r\n");
+//printf ((const char *)"SD Card Unmounted \r\n");
 //unmount filesystem
 f_mount(0,NULL);
 

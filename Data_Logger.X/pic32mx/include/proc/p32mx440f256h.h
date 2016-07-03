@@ -6312,13 +6312,22 @@ extern volatile __DEVCFG0bits_t DEVCFG0bits __asm__ ("DEVCFG0") __attribute__((s
 #define _SPI2CON_w_MASK                          0xFFFFFFFF
 #define _SPI2CON_w_LENGTH                        0x00000020
 
-#define _SPI2STAT_SPIRBF_POSITION                0x00000000
-#define _SPI2STAT_SPIRBF_MASK                    0x00000001
-#define _SPI2STAT_SPIRBF_LENGTH                  0x00000001
+#define _SPI2STAT_SPIRBF_POSITION                0x00000000                     // BTA Was _SPI2STAT_SPIRBF_POSITION
+#define _SPI2STAT_SPIRBF_MASK                    0x00000001                     // BTA Was _SPI2STAT_SPIRBF_MASK
+#define _SPI2STAT_SPIRBF_LENGTH                  0x00000001                     // BTA Was _SPI2STAT_SPIRBF_LENGTH
 
-#define _SPI2STAT_SPITBE_POSITION                0x00000003
-#define _SPI2STAT_SPITBE_MASK                    0x00000008
-#define _SPI2STAT_SPITBE_LENGTH                  0x00000001
+#define _SPI2STAT_SPITBE_POSITION                0x00000003                     // BTA Was _SPI2STAT_SPITBE_POSITION
+#define _SPI2STAT_SPITBE_MASK                    0x00000008                     // BTA Was _SPI2STAT_SPITBE_MASK
+#define _SPI2STAT_SPITBE_LENGTH                  0x00000001                     // BTA Was _SPI2STAT_SPITBE_LENGTH
+
+#define _SPI2STAT_SPITBF_POSITION                0x00000000                     // BTA CREATED
+#define _SPI2STAT_SPITBF_MASK                    0x00000001                     // BTA CREATED
+#define _SPI2STAT_SPITBF_LENGTH                  0x00000001                      // BTA CREATED
+
+#define _SPI2STAT_SPIRBE_POSITION                0x00000003                     // BTA CREATED
+#define _SPI2STAT_SPIRBE_MASK                    0x00000008                     // BTA CREATED
+#define _SPI2STAT_SPIRBE_LENGTH                  0x00000001                     // BTA CREATED
+
 
 #define _SPI2STAT_SPIROV_POSITION                0x00000006
 #define _SPI2STAT_SPIROV_MASK                    0x00000040

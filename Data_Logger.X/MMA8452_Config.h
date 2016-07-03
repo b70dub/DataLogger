@@ -5,6 +5,8 @@
  * Created on June 6, 2016, 2:24 PM
  */
 
+#include "GenericTypeDefs.h"
+
 #ifndef MMA8452_CONFIG_H
 #define	MMA8452_CONFIG_H
 
@@ -103,6 +105,8 @@ float Xout_g, Yout_g, Zout_g;
 
 unsigned char ucDataArray[10];
 unsigned char ucAddressArray[3];
+
+void MMA8452Q_SetMode(UINT8 slave_adr, int iMode);
 
 #ifdef	__cplusplus
 }

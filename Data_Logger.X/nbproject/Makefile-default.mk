@@ -38,6 +38,12 @@ DEBUGGABLE_SUFFIX=elf
 FINAL_IMAGE=dist/${CND_CONF}/${IMAGE_TYPE}/Data_Logger.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
 endif
 
+ifeq ($(COMPARE_BUILD), true)
+COMPARISON_BUILD=-mafrlcsj
+else
+COMPARISON_BUILD=
+endif
+
 # Object Directory
 OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 
@@ -45,17 +51,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=main.c mmcPIC32.c ff.c "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MyToolbox.c" "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MMA8452_I2C.c" "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/SystemTimer.c" "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareDrvr.c"
+SOURCEFILES_QUOTED_IF_SPACED=main.c mmcPIC32.c ff.c C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/I2C_HardwareDrvr.c C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/MMA8452_I2C.c C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/MyToolbox.c C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/SystemTimer.c C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/GLOBAL_VARS.c Delay_32.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/main.o ${OBJECTDIR}/mmcPIC32.o ${OBJECTDIR}/ff.o ${OBJECTDIR}/_ext/741207277/MyToolbox.o ${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o ${OBJECTDIR}/_ext/741207277/SystemTimer.o ${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/main.o.d ${OBJECTDIR}/mmcPIC32.o.d ${OBJECTDIR}/ff.o.d ${OBJECTDIR}/_ext/741207277/MyToolbox.o.d ${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o.d ${OBJECTDIR}/_ext/741207277/SystemTimer.o.d ${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/main.o ${OBJECTDIR}/mmcPIC32.o ${OBJECTDIR}/ff.o ${OBJECTDIR}/_ext/2144608847/I2C_HardwareDrvr.o ${OBJECTDIR}/_ext/2144608847/MMA8452_I2C.o ${OBJECTDIR}/_ext/2144608847/MyToolbox.o ${OBJECTDIR}/_ext/2144608847/SystemTimer.o ${OBJECTDIR}/_ext/2144608847/GLOBAL_VARS.o ${OBJECTDIR}/Delay_32.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/main.o.d ${OBJECTDIR}/mmcPIC32.o.d ${OBJECTDIR}/ff.o.d ${OBJECTDIR}/_ext/2144608847/I2C_HardwareDrvr.o.d ${OBJECTDIR}/_ext/2144608847/MMA8452_I2C.o.d ${OBJECTDIR}/_ext/2144608847/MyToolbox.o.d ${OBJECTDIR}/_ext/2144608847/SystemTimer.o.d ${OBJECTDIR}/_ext/2144608847/GLOBAL_VARS.o.d ${OBJECTDIR}/Delay_32.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/main.o ${OBJECTDIR}/mmcPIC32.o ${OBJECTDIR}/ff.o ${OBJECTDIR}/_ext/741207277/MyToolbox.o ${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o ${OBJECTDIR}/_ext/741207277/SystemTimer.o ${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o
+OBJECTFILES=${OBJECTDIR}/main.o ${OBJECTDIR}/mmcPIC32.o ${OBJECTDIR}/ff.o ${OBJECTDIR}/_ext/2144608847/I2C_HardwareDrvr.o ${OBJECTDIR}/_ext/2144608847/MMA8452_I2C.o ${OBJECTDIR}/_ext/2144608847/MyToolbox.o ${OBJECTDIR}/_ext/2144608847/SystemTimer.o ${OBJECTDIR}/_ext/2144608847/GLOBAL_VARS.o ${OBJECTDIR}/Delay_32.o
 
 # Source Files
-SOURCEFILES=main.c mmcPIC32.c ff.c C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MyToolbox.c C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MMA8452_I2C.c C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/SystemTimer.c C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareDrvr.c
+SOURCEFILES=main.c mmcPIC32.c ff.c C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/I2C_HardwareDrvr.c C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/MMA8452_I2C.c C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/MyToolbox.c C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/SystemTimer.c C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/GLOBAL_VARS.c Delay_32.c
 
 
 CFLAGS=
@@ -77,7 +83,7 @@ ifneq ($(INFORMATION_MESSAGE), )
 endif
 	${MAKE}  -f nbproject/Makefile-default.mk dist/${CND_CONF}/${IMAGE_TYPE}/Data_Logger.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
 
-MP_PROCESSOR_OPTION=32MX230F064B
+MP_PROCESSOR_OPTION=32MX440F256H
 MP_LINKER_FILE_OPTION=
 # ------------------------------------------------------------------------------------
 # Rules for buildStep: assemble
@@ -95,89 +101,113 @@ endif
 # Rules for buildStep: compile
 ifeq ($(TYPE_IMAGE), DEBUG_RUN)
 ${OBJECTDIR}/main.o: main.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
+	@${MKDIR} "${OBJECTDIR}" 
 	@${RM} ${OBJECTDIR}/main.o.d 
 	@${RM} ${OBJECTDIR}/main.o 
-	@${FIXDEPS} "${OBJECTDIR}/main.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/main.o.d" -o ${OBJECTDIR}/main.o main.c   -legacy-libc
+	@${FIXDEPS} "${OBJECTDIR}/main.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -mappio-debug -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/main.o.d" -o ${OBJECTDIR}/main.o main.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
 ${OBJECTDIR}/mmcPIC32.o: mmcPIC32.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
+	@${MKDIR} "${OBJECTDIR}" 
 	@${RM} ${OBJECTDIR}/mmcPIC32.o.d 
 	@${RM} ${OBJECTDIR}/mmcPIC32.o 
-	@${FIXDEPS} "${OBJECTDIR}/mmcPIC32.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/mmcPIC32.o.d" -o ${OBJECTDIR}/mmcPIC32.o mmcPIC32.c   -legacy-libc
+	@${FIXDEPS} "${OBJECTDIR}/mmcPIC32.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -mappio-debug -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/mmcPIC32.o.d" -o ${OBJECTDIR}/mmcPIC32.o mmcPIC32.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
 ${OBJECTDIR}/ff.o: ff.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
+	@${MKDIR} "${OBJECTDIR}" 
 	@${RM} ${OBJECTDIR}/ff.o.d 
 	@${RM} ${OBJECTDIR}/ff.o 
-	@${FIXDEPS} "${OBJECTDIR}/ff.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/ff.o.d" -o ${OBJECTDIR}/ff.o ff.c   -legacy-libc
+	@${FIXDEPS} "${OBJECTDIR}/ff.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -mappio-debug -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/ff.o.d" -o ${OBJECTDIR}/ff.o ff.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
-${OBJECTDIR}/_ext/741207277/MyToolbox.o: C:/Users/Public/Documents/PIC\ Projects/GitSourceTree_Repository/Data_Logger.X/MyToolbox.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/741207277 
-	@${RM} ${OBJECTDIR}/_ext/741207277/MyToolbox.o.d 
-	@${RM} ${OBJECTDIR}/_ext/741207277/MyToolbox.o 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/741207277/MyToolbox.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/741207277/MyToolbox.o.d" -o ${OBJECTDIR}/_ext/741207277/MyToolbox.o "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MyToolbox.c"   -legacy-libc
+${OBJECTDIR}/_ext/2144608847/I2C_HardwareDrvr.o: C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/I2C_HardwareDrvr.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}/_ext/2144608847" 
+	@${RM} ${OBJECTDIR}/_ext/2144608847/I2C_HardwareDrvr.o.d 
+	@${RM} ${OBJECTDIR}/_ext/2144608847/I2C_HardwareDrvr.o 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/2144608847/I2C_HardwareDrvr.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -mappio-debug -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/_ext/2144608847/I2C_HardwareDrvr.o.d" -o ${OBJECTDIR}/_ext/2144608847/I2C_HardwareDrvr.o C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/I2C_HardwareDrvr.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
-${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o: C:/Users/Public/Documents/PIC\ Projects/GitSourceTree_Repository/Data_Logger.X/MMA8452_I2C.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/741207277 
-	@${RM} ${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o.d 
-	@${RM} ${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o.d" -o ${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MMA8452_I2C.c"   -legacy-libc
+${OBJECTDIR}/_ext/2144608847/MMA8452_I2C.o: C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/MMA8452_I2C.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}/_ext/2144608847" 
+	@${RM} ${OBJECTDIR}/_ext/2144608847/MMA8452_I2C.o.d 
+	@${RM} ${OBJECTDIR}/_ext/2144608847/MMA8452_I2C.o 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/2144608847/MMA8452_I2C.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -mappio-debug -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/_ext/2144608847/MMA8452_I2C.o.d" -o ${OBJECTDIR}/_ext/2144608847/MMA8452_I2C.o C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/MMA8452_I2C.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
-${OBJECTDIR}/_ext/741207277/SystemTimer.o: C:/Users/Public/Documents/PIC\ Projects/GitSourceTree_Repository/Data_Logger.X/SystemTimer.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/741207277 
-	@${RM} ${OBJECTDIR}/_ext/741207277/SystemTimer.o.d 
-	@${RM} ${OBJECTDIR}/_ext/741207277/SystemTimer.o 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/741207277/SystemTimer.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/741207277/SystemTimer.o.d" -o ${OBJECTDIR}/_ext/741207277/SystemTimer.o "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/SystemTimer.c"   -legacy-libc
+${OBJECTDIR}/_ext/2144608847/MyToolbox.o: C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/MyToolbox.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}/_ext/2144608847" 
+	@${RM} ${OBJECTDIR}/_ext/2144608847/MyToolbox.o.d 
+	@${RM} ${OBJECTDIR}/_ext/2144608847/MyToolbox.o 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/2144608847/MyToolbox.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -mappio-debug -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/_ext/2144608847/MyToolbox.o.d" -o ${OBJECTDIR}/_ext/2144608847/MyToolbox.o C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/MyToolbox.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
-${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o: C:/Users/Public/Documents/PIC\ Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareDrvr.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/741207277 
-	@${RM} ${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o.d 
-	@${RM} ${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o.d" -o ${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareDrvr.c"   -legacy-libc
+${OBJECTDIR}/_ext/2144608847/SystemTimer.o: C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/SystemTimer.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}/_ext/2144608847" 
+	@${RM} ${OBJECTDIR}/_ext/2144608847/SystemTimer.o.d 
+	@${RM} ${OBJECTDIR}/_ext/2144608847/SystemTimer.o 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/2144608847/SystemTimer.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -mappio-debug -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/_ext/2144608847/SystemTimer.o.d" -o ${OBJECTDIR}/_ext/2144608847/SystemTimer.o C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/SystemTimer.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
+	
+${OBJECTDIR}/_ext/2144608847/GLOBAL_VARS.o: C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/GLOBAL_VARS.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}/_ext/2144608847" 
+	@${RM} ${OBJECTDIR}/_ext/2144608847/GLOBAL_VARS.o.d 
+	@${RM} ${OBJECTDIR}/_ext/2144608847/GLOBAL_VARS.o 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/2144608847/GLOBAL_VARS.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -mappio-debug -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/_ext/2144608847/GLOBAL_VARS.o.d" -o ${OBJECTDIR}/_ext/2144608847/GLOBAL_VARS.o C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/GLOBAL_VARS.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
+	
+${OBJECTDIR}/Delay_32.o: Delay_32.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}" 
+	@${RM} ${OBJECTDIR}/Delay_32.o.d 
+	@${RM} ${OBJECTDIR}/Delay_32.o 
+	@${FIXDEPS} "${OBJECTDIR}/Delay_32.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -mappio-debug -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/Delay_32.o.d" -o ${OBJECTDIR}/Delay_32.o Delay_32.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
 else
 ${OBJECTDIR}/main.o: main.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
+	@${MKDIR} "${OBJECTDIR}" 
 	@${RM} ${OBJECTDIR}/main.o.d 
 	@${RM} ${OBJECTDIR}/main.o 
-	@${FIXDEPS} "${OBJECTDIR}/main.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/main.o.d" -o ${OBJECTDIR}/main.o main.c   -legacy-libc
+	@${FIXDEPS} "${OBJECTDIR}/main.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -mappio-debug -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/main.o.d" -o ${OBJECTDIR}/main.o main.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
 ${OBJECTDIR}/mmcPIC32.o: mmcPIC32.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
+	@${MKDIR} "${OBJECTDIR}" 
 	@${RM} ${OBJECTDIR}/mmcPIC32.o.d 
 	@${RM} ${OBJECTDIR}/mmcPIC32.o 
-	@${FIXDEPS} "${OBJECTDIR}/mmcPIC32.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/mmcPIC32.o.d" -o ${OBJECTDIR}/mmcPIC32.o mmcPIC32.c   -legacy-libc
+	@${FIXDEPS} "${OBJECTDIR}/mmcPIC32.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -mappio-debug -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/mmcPIC32.o.d" -o ${OBJECTDIR}/mmcPIC32.o mmcPIC32.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
 ${OBJECTDIR}/ff.o: ff.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
+	@${MKDIR} "${OBJECTDIR}" 
 	@${RM} ${OBJECTDIR}/ff.o.d 
 	@${RM} ${OBJECTDIR}/ff.o 
-	@${FIXDEPS} "${OBJECTDIR}/ff.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/ff.o.d" -o ${OBJECTDIR}/ff.o ff.c   -legacy-libc
+	@${FIXDEPS} "${OBJECTDIR}/ff.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -mappio-debug -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/ff.o.d" -o ${OBJECTDIR}/ff.o ff.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
-${OBJECTDIR}/_ext/741207277/MyToolbox.o: C:/Users/Public/Documents/PIC\ Projects/GitSourceTree_Repository/Data_Logger.X/MyToolbox.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/741207277 
-	@${RM} ${OBJECTDIR}/_ext/741207277/MyToolbox.o.d 
-	@${RM} ${OBJECTDIR}/_ext/741207277/MyToolbox.o 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/741207277/MyToolbox.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/741207277/MyToolbox.o.d" -o ${OBJECTDIR}/_ext/741207277/MyToolbox.o "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MyToolbox.c"   -legacy-libc
+${OBJECTDIR}/_ext/2144608847/I2C_HardwareDrvr.o: C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/I2C_HardwareDrvr.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}/_ext/2144608847" 
+	@${RM} ${OBJECTDIR}/_ext/2144608847/I2C_HardwareDrvr.o.d 
+	@${RM} ${OBJECTDIR}/_ext/2144608847/I2C_HardwareDrvr.o 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/2144608847/I2C_HardwareDrvr.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -mappio-debug -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/_ext/2144608847/I2C_HardwareDrvr.o.d" -o ${OBJECTDIR}/_ext/2144608847/I2C_HardwareDrvr.o C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/I2C_HardwareDrvr.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
-${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o: C:/Users/Public/Documents/PIC\ Projects/GitSourceTree_Repository/Data_Logger.X/MMA8452_I2C.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/741207277 
-	@${RM} ${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o.d 
-	@${RM} ${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o.d" -o ${OBJECTDIR}/_ext/741207277/MMA8452_I2C.o "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/MMA8452_I2C.c"   -legacy-libc
+${OBJECTDIR}/_ext/2144608847/MMA8452_I2C.o: C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/MMA8452_I2C.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}/_ext/2144608847" 
+	@${RM} ${OBJECTDIR}/_ext/2144608847/MMA8452_I2C.o.d 
+	@${RM} ${OBJECTDIR}/_ext/2144608847/MMA8452_I2C.o 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/2144608847/MMA8452_I2C.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -mappio-debug -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/_ext/2144608847/MMA8452_I2C.o.d" -o ${OBJECTDIR}/_ext/2144608847/MMA8452_I2C.o C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/MMA8452_I2C.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
-${OBJECTDIR}/_ext/741207277/SystemTimer.o: C:/Users/Public/Documents/PIC\ Projects/GitSourceTree_Repository/Data_Logger.X/SystemTimer.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/741207277 
-	@${RM} ${OBJECTDIR}/_ext/741207277/SystemTimer.o.d 
-	@${RM} ${OBJECTDIR}/_ext/741207277/SystemTimer.o 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/741207277/SystemTimer.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/741207277/SystemTimer.o.d" -o ${OBJECTDIR}/_ext/741207277/SystemTimer.o "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/SystemTimer.c"   -legacy-libc
+${OBJECTDIR}/_ext/2144608847/MyToolbox.o: C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/MyToolbox.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}/_ext/2144608847" 
+	@${RM} ${OBJECTDIR}/_ext/2144608847/MyToolbox.o.d 
+	@${RM} ${OBJECTDIR}/_ext/2144608847/MyToolbox.o 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/2144608847/MyToolbox.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -mappio-debug -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/_ext/2144608847/MyToolbox.o.d" -o ${OBJECTDIR}/_ext/2144608847/MyToolbox.o C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/MyToolbox.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
-${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o: C:/Users/Public/Documents/PIC\ Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareDrvr.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/741207277 
-	@${RM} ${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o.d 
-	@${RM} ${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o.d" -o ${OBJECTDIR}/_ext/741207277/I2C_HardwareDrvr.o "C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/I2C_HardwareDrvr.c"   -legacy-libc
+${OBJECTDIR}/_ext/2144608847/SystemTimer.o: C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/SystemTimer.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}/_ext/2144608847" 
+	@${RM} ${OBJECTDIR}/_ext/2144608847/SystemTimer.o.d 
+	@${RM} ${OBJECTDIR}/_ext/2144608847/SystemTimer.o 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/2144608847/SystemTimer.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -mappio-debug -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/_ext/2144608847/SystemTimer.o.d" -o ${OBJECTDIR}/_ext/2144608847/SystemTimer.o C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/SystemTimer.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
+	
+${OBJECTDIR}/_ext/2144608847/GLOBAL_VARS.o: C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/GLOBAL_VARS.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}/_ext/2144608847" 
+	@${RM} ${OBJECTDIR}/_ext/2144608847/GLOBAL_VARS.o.d 
+	@${RM} ${OBJECTDIR}/_ext/2144608847/GLOBAL_VARS.o 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/2144608847/GLOBAL_VARS.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -mappio-debug -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/_ext/2144608847/GLOBAL_VARS.o.d" -o ${OBJECTDIR}/_ext/2144608847/GLOBAL_VARS.o C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/GLOBAL_VARS.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
+	
+${OBJECTDIR}/Delay_32.o: Delay_32.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}" 
+	@${RM} ${OBJECTDIR}/Delay_32.o.d 
+	@${RM} ${OBJECTDIR}/Delay_32.o 
+	@${FIXDEPS} "${OBJECTDIR}/Delay_32.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -mappio-debug -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/Delay_32.o.d" -o ${OBJECTDIR}/Delay_32.o Delay_32.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
 endif
 
@@ -192,12 +222,12 @@ endif
 ifeq ($(TYPE_IMAGE), DEBUG_RUN)
 dist/${CND_CONF}/${IMAGE_TYPE}/Data_Logger.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFILES}  nbproject/Makefile-${CND_CONF}.mk    
 	@${MKDIR} dist/${CND_CONF}/${IMAGE_TYPE} 
-	${MP_CC} $(MP_EXTRA_LD_PRE)  -mdebugger -D__MPLAB_DEBUGGER_PK3=1 -mprocessor=$(MP_PROCESSOR_OPTION)  -o dist/${CND_CONF}/${IMAGE_TYPE}/Data_Logger.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX} ${OBJECTFILES_QUOTED_IF_SPACED}         -legacy-libc  -mreserve=data@0x0:0x1FC -mreserve=boot@0x1FC00490:0x1FC00BEF  -Wl,--defsym=__MPLAB_BUILD=1$(MP_EXTRA_LD_POST)$(MP_LINKER_FILE_OPTION),--defsym=__MPLAB_DEBUG=1,--defsym=__DEBUG=1,--defsym=__MPLAB_DEBUGGER_PK3=1,-Map="${DISTDIR}/${PROJECTNAME}.${IMAGE_TYPE}.map"
+	${MP_CC} $(MP_EXTRA_LD_PRE)  -mdebugger -D__MPLAB_DEBUGGER_PK3=1 -mprocessor=$(MP_PROCESSOR_OPTION)  -o dist/${CND_CONF}/${IMAGE_TYPE}/Data_Logger.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX} ${OBJECTFILES_QUOTED_IF_SPACED}          -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD)    -mreserve=boot@0x1FC02000:0x1FC02FEF -mreserve=boot@0x1FC02000:0x1FC024FF  -Wl,--defsym=__MPLAB_BUILD=1$(MP_EXTRA_LD_POST)$(MP_LINKER_FILE_OPTION),--defsym=__MPLAB_DEBUG=1,--defsym=__DEBUG=1,--defsym=__MPLAB_DEBUGGER_PK3=1,--no-code-in-dinit,--no-dinit-in-serial-mem,-Map="${DISTDIR}/${PROJECTNAME}.${IMAGE_TYPE}.map",--memorysummary,dist/${CND_CONF}/${IMAGE_TYPE}/memoryfile.xml
 	
 else
 dist/${CND_CONF}/${IMAGE_TYPE}/Data_Logger.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFILES}  nbproject/Makefile-${CND_CONF}.mk   
 	@${MKDIR} dist/${CND_CONF}/${IMAGE_TYPE} 
-	${MP_CC} $(MP_EXTRA_LD_PRE)  -mprocessor=$(MP_PROCESSOR_OPTION)  -o dist/${CND_CONF}/${IMAGE_TYPE}/Data_Logger.X.${IMAGE_TYPE}.${DEBUGGABLE_SUFFIX} ${OBJECTFILES_QUOTED_IF_SPACED}         -legacy-libc -Wl,--defsym=__MPLAB_BUILD=1$(MP_EXTRA_LD_POST)$(MP_LINKER_FILE_OPTION),-Map="${DISTDIR}/${PROJECTNAME}.${IMAGE_TYPE}.map"
+	${MP_CC} $(MP_EXTRA_LD_PRE)  -mprocessor=$(MP_PROCESSOR_OPTION)  -o dist/${CND_CONF}/${IMAGE_TYPE}/Data_Logger.X.${IMAGE_TYPE}.${DEBUGGABLE_SUFFIX} ${OBJECTFILES_QUOTED_IF_SPACED}          -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD)  -Wl,--defsym=__MPLAB_BUILD=1$(MP_EXTRA_LD_POST)$(MP_LINKER_FILE_OPTION),--no-code-in-dinit,--no-dinit-in-serial-mem,-Map="${DISTDIR}/${PROJECTNAME}.${IMAGE_TYPE}.map",--memorysummary,dist/${CND_CONF}/${IMAGE_TYPE}/memoryfile.xml
 	${MP_CC_DIR}\\xc32-bin2hex dist/${CND_CONF}/${IMAGE_TYPE}/Data_Logger.X.${IMAGE_TYPE}.${DEBUGGABLE_SUFFIX} 
 endif
 

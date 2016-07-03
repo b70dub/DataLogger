@@ -12,9 +12,13 @@
 extern "C" {
 #endif
 
-#include "HardwareProfile.h"
+//#include "HardwareProfile.h"
+//#include "GLOBAL_VARS.h"
+//#include <xc.h>
+#include "pic32mx\include\xc.h"
 
-// Change below defines to I2C2xxx if using I2C2
+
+ // Change below defines to I2C2xxx if using I2C2
 #define I2CCON        I2C1CON
 #define I2CCONbits    I2C1CONbits
 #define I2CSTAT       I2C1STAT
@@ -25,9 +29,10 @@ extern "C" {
 #define I2CADD        I2C1ADD
 #define I2CBRG        I2C1BRG
 
-#define FCL        400000 // Check the max speed supported by your peripheral!!
+#define FCL        800000// 400000 // Check the max speed supported by your peripheral!!
 
 #define I2C_DEBUG 0 // Change to 1 for debug messages
+ 
 
 
 static void I2C_Idle(void);

@@ -42,15 +42,28 @@
 
 
 /* Port Controls  (Platform dependent) */
+#define CS_SETOUT() TRISBbits.TRISB13 = 0
+#define CS_LOW()  _LATB13 = 0	/* MMC CS = L */
+#define CS_HIGH() _LATB13 = 1	/* MMC CS = H */
+// Change the SPI port number as needed on the following 5 lines
+#define SPIBRG  SPI2BRG                                                            //--BTA changed these to use port 2
+#define SPIBUF  SPI2BUF
+#define SPISTATbits SPI2STAT
+#define SPI_CHANNEL SPI_CHANNEL2
+#define SPICONbits SPI2CON
+
+/* ORIGINAL
+
 #define CS_SETOUT() TRISBbits.TRISB0 = 0
-#define CS_LOW()  _LATB0 = 0	/* MMC CS = L */
-#define CS_HIGH() _LATB0 = 1	/* MMC CS = H */
+#define CS_LOW()  _LATB0 = 0	// MMC CS = L
+#define CS_HIGH() _LATB0 = 1	// MMC CS = H
 // Change the SPI port number as needed on the following 5 lines
 #define SPIBRG  SPI1BRG
 #define SPIBUF  SPI1BUF
-#define SPISTATbits SPI1STATbits
+#define SPISTATbits SPI1STAT
 #define SPI_CHANNEL SPI_CHANNEL1
-#define SPICONbits SPI1CONbits
+#define SPICONbits SPI1CON
+*/
 
 //REVEIW THIS LATER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // Makes assumptions that sockwp and sockins are on the same port...
@@ -87,15 +100,16 @@ UINT CardType;
 
 #define xmit_spi(dat) 	xchg_spi(dat)
 #define rcvr_spi()		xchg_spi(0xFF)
-//#define rcvr_spi_m(p)	SPI2BUF = 0xFF; while (!SPI2STATbits.SPIRBF); *(p) = (BYTE)SPI2BUF;
-#define rcvr_spi_m(p)	SPIBUF = 0xFF; while (!SPISTATbits.SPIRBF); *(p) = (BYTE)SPIBUF;
+#define rcvr_spi_m(p)	SPI2BUF = 0xFF; while (!SPI2STATbits.SPIRBF); *(p) = (BYTE)SPI2BUF;
+//#define rcvr_spi_m(p)	SPIBUF = 0xFF; while (!SPISTATbits.SPIRBF); *(p) = (BYTE)SPIBUF;
 
 static
 BYTE xchg_spi (BYTE dat)
 {
-	SPI1BUF = dat;
-	while (!SPI1STATbits.SPIRBF);
-	return (BYTE)SPI1BUF;
+	SPI2BUF = dat;
+        while (!SPI2STATbits.SPIRBF);
+	//while (!SPISTATbits.SPIRBF);
+	return (BYTE)SPI2BUF;
 	
 }
 
@@ -211,10 +225,10 @@ void power_on (void)
 	// Setup CS as output
 	CS_SETOUT();
 	// configured for ~400 kHz operation - reset later to 20 MHz
-//	SpiChnOpen(SPI_CHANNEL2,SPI_OPEN_MSTEN|SPI_OPEN_CKP_HIGH|SPI_OPEN_SMP_END|SPI_OPEN_MODE8,64); 
-	SpiChnOpen(SPI_CHANNEL1,SPI_OPEN_MSTEN|SPI_OPEN_CKP_HIGH|SPI_OPEN_SMP_END|SPI_OPEN_MODE8,64);
+	SpiChnOpen(SPI_CHANNEL2,SPI_OPEN_MSTEN|SPI_OPEN_CKP_HIGH|SPI_OPEN_SMP_END|SPI_OPEN_MODE8,64); 
+//	SpiChnOpen(SPI_CHANNEL1,SPI_OPEN_MSTEN|SPI_OPEN_CKP_HIGH|SPI_OPEN_SMP_END|SPI_OPEN_MODE8,64);
 //	SPI2CONbits.ON = 1;
-	SPICONbits.ON = 1;
+	SPI2CONbits.ON = 1;
 }
 
 static
@@ -224,7 +238,7 @@ void power_off (void)
 	deselect();
 
 //	SPI2CONbits.ON = 0;			/* Disable SPI2 */
-	SPICONbits.ON = 0;			/* Disable SPI */
+	SPI2CONbits.ON = 0;			/* Disable SPI */
 
 	Stat |= STA_NOINIT;	/* Set STA_NOINIT */
 }
