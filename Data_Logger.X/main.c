@@ -52,17 +52,7 @@
 #define TOGGLES_PER_SEC   1000
 #define CORE_TICK_RATE   (GetSystemClock()/2/TOGGLES_PER_SEC)
 
-#define mPORTBClearBits(_bits) { LATB &= ~(unsigned int)_bits;}/*Clears PortB bit*/
-#define mPORTCClearBits(_bits) { LATC &= ~(unsigned int)_bits;}/*Clears PortC bit*/
-#define mPORTDClearBits(_bits) { LATD &= ~(unsigned int)_bits;}/*Clears PortD bit*/
-#define mPORTEClearBits(_bits) { LATE &= ~(unsigned int)_bits;}/*Clears PortE bit*/
-#define mPORTFClearBits(_bits) { LATF &= ~(unsigned int)_bits;}/*Clears PortF bit*/
 
-#define mPORTBSetBits(_bits) { LATB |= (unsigned int)_bits;} /*Set PortB bit*/
-#define mPORTCSetBits(_bits) { LATC |= (unsigned int)_bits;} /*Set PortC bit*/
-#define mPORTDSetBits(_bits) { LATD |= (unsigned int)_bits;} /*Set PortD bit*/
-#define mPORTESetBits(_bits) { LATE |= (unsigned int)_bits;} /*Set PortE bit*/
-#define mPORTFSetBits(_bits) { LATF |= (unsigned int)_bits;} /*Set PortF bit*/
 
 
 /*******************************************************************************

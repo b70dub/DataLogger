@@ -76,7 +76,8 @@
 
 
 //#define SYS_CLOCK (80000000L)
-#define I2C_CLOCK_FREQ              5000
+//#define I2C_CLOCK_FREQ              5000
+#define I2C_CLOCK_FREQ              100000
 
 // EEPROM Constants
 #define EEPROM_I2C_BUS              I2C1

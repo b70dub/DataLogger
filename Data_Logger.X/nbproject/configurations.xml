@@ -8,13 +8,14 @@
       <itemPath>ff.h</itemPath>
       <itemPath>ffconf.h</itemPath>
       <itemPath>integer.h</itemPath>
+      <itemPath>32_ADC.h</itemPath>
       <itemPath>diskio.h</itemPath>
+      <itemPath>MX440_STD.h</itemPath>
+      <itemPath>SystemTimer.h</itemPath>
+      <itemPath>MMA8452_Config.h</itemPath>
       <itemPath>HardwareProfile.h</itemPath>
-      <itemPath>C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/GenericTypeDefs.h</itemPath>
-      <itemPath>C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/GLOBAL_VARS.h</itemPath>
-      <itemPath>C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/I2C_HardwareDrvr.h</itemPath>
-      <itemPath>C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/MMA8452_Config.h</itemPath>
-      <itemPath>C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/SystemTimer.h</itemPath>
+      <itemPath>GLOBAL_VARS.h</itemPath>
+      <itemPath>I2C_HardwareDrvr.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -26,12 +27,12 @@
       <itemPath>main.c</itemPath>
       <itemPath>mmcPIC32.c</itemPath>
       <itemPath>ff.c</itemPath>
-      <itemPath>C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/I2C_HardwareDrvr.c</itemPath>
-      <itemPath>C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/MMA8452_I2C.c</itemPath>
-      <itemPath>C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/MyToolbox.c</itemPath>
-      <itemPath>C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/SystemTimer.c</itemPath>
-      <itemPath>C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/GLOBAL_VARS.c</itemPath>
+      <itemPath>MyToolbox.c</itemPath>
       <itemPath>Delay_32.c</itemPath>
+      <itemPath>GLOBAL_VARS.c</itemPath>
+      <itemPath>I2C_HardwareDrvr.c</itemPath>
+      <itemPath>MMA8452_I2C.c</itemPath>
+      <itemPath>SystemTimer.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -41,6 +42,7 @@
   </logicalFolder>
   <sourceRootList>
     <Elem>.</Elem>
+    <Elem>C:/Users/Public/Documents/PIC Projects/GitSourceTree_Repository/Data_Logger.X/pic32mx/include</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -80,7 +82,7 @@
       <C32>
         <property key="additional-warnings" value="false"/>
         <property key="addresss-attribute-use" value="false"/>
-        <property key="enable-app-io" value="true"/>
+        <property key="enable-app-io" value="false"/>
         <property key="enable-omit-frame-pointer" value="false"/>
         <property key="enable-symbols" value="true"/>
         <property key="enable-unroll-loops" value="false"/>
