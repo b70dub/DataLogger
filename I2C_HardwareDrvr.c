@@ -147,8 +147,8 @@ return count;
 static void I2C_Idle(void) {                                                     //- Supporting Function
     UINT8 t = 255;
     /* Wait until I2C Bus is Inactive */
-    while (I2CCONbits.SEN || I2CCONbits.PEN || I2CCONbits.RCEN ||
-            I2CCONbits.RSEN || I2CCONbits.ACKEN || I2CSTATbits.TRSTAT || t--);
+    while ((I2CCONbits.SEN || I2CCONbits.PEN || I2CCONbits.RCEN ||
+            I2CCONbits.RSEN || I2CCONbits.ACKEN || I2CSTATbits.TRSTAT) && !t-- );
 }
 
 static BOOL I2C_Start(void) {                                                    //- Supporting Function
