@@ -17,7 +17,7 @@ extern "C" {
 /******************************************************************************
 * Sytem Timer - typedefs/structs
 ******************************************************************************/
-typedef struct TimeStamp {
+typedef struct rtcTimeStamp {
   BYTE year;
   BYTE month;
   BYTE day;
@@ -27,15 +27,20 @@ typedef struct TimeStamp {
   int msec;
 
 };
-//extern struct TimeStamp TNow;
 
-typedef struct Timer {
-    struct TimeStamp StartTime;
-    struct TimeStamp Setpt;
-    struct TimeStamp RemainingTime;
+typedef struct rtcTimer {
+    struct rtcTimeStamp StartTime;
+    struct rtcTimeStamp Setpt;
+    struct rtcTimeStamp RemainingTime;
     BOOL TimerComplete;
 };
-//extern struct Timer TestCycleTimer,LogTimer1,LogTimer2;
+
+typedef struct msTimer {
+    int StartTime;
+    int Setpt;
+    int RemainingTime;
+    BOOL TimerComplete;
+};
 
 /******************************************************************************
 * Sytem Timer - variables and constants
@@ -48,9 +53,9 @@ typedef struct Timer {
 /******************************************************************************
 * Sytem Timer - functions
 ******************************************************************************/
-void func_InitializeTime(struct TimeStamp* TimeNow);
-void Func_UpdateSystemTime(struct TimeStamp* TimeNow, BYTE rtcYear, BYTE rtcMon, BYTE rtcMday, BYTE rtcHour, BYTE rtcMin, BYTE rtcSec, int irtc_mSec);
-void func_GetRemainingTime(struct Timer* ThisTimer, struct TimeStamp* TimeNow);
+void func_InitializeTime(struct rtcTimeStamp* TimeNow);
+void Func_UpdateSystemTime(struct rtcTimeStamp* TimeNow, BYTE rtcYear, BYTE rtcMon, BYTE rtcMday, BYTE rtcHour, BYTE rtcMin, BYTE rtcSec, int irtc_mSec);
+void func_GetRemainingTime_rtc(struct Timer* ThisTimer, struct rtcTimeStamp* TimeNow);
 
 #ifdef	__cplusplus
 }

@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
 * File: Main.c
 * Author: Brian Ankeny
 * PIC: 32MX440F256H @ 80MHz, 3.3v
@@ -34,25 +34,24 @@
 /*******************************************************************************
  Includes and defines
  ******************************************************************************/
-#include <plib.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <strings.h>
+#include "pic32mx\include\plib.h"
+#include "pic32mx\include\stdlib.h"
+#include "pic32mx\include\stdio.h"
+#include "pic32mx\include\string.h"
+#include "pic32mx\include\strings.h"
+
 
 #include "MMA8452_Config.h"
 #include "HardwareProfile.h"
 
 #include "ff.h"
-#include "SystemTimer.h"
 #include "GLOBAL_VARS.h"
+#include "I2C_HardwareDrvr.h"
 
-//#define GetSystemClock() (40000000ul)
-#define GetSystemClock()        (80000000ul) //pic32 runs at 80mHz
+
+#define GetSystemClock()  (80000000ul) //pic32 runs at 80mHz
 #define TOGGLES_PER_SEC   1000
 #define CORE_TICK_RATE   (GetSystemClock()/2/TOGGLES_PER_SEC)
-
-
 
 
 /*******************************************************************************
@@ -67,20 +66,16 @@
  
  
  UINT len;          //needed for writing file
-//volatile unsigned int
+
  volatile UINT8  TimeUpdated; //Flags for accelerometer interrupts
 
  /******************************************************************************
 * Sytem Timer - variables and constants
 ******************************************************************************/
-volatile int irtc_mSec;
+volatile int irtc_mSec, mSec_CurrentCount = 0;
 volatile BYTE rtcYear = 111, rtcMon = 11, rtcMday = 22;    // RTC date values
 volatile BYTE rtcHour = 0, rtcMin = 0, rtcSec = 0;    // RTC time values
 volatile unsigned long tick;                               // Used for ISR
-
-struct Timer TestCycleTimer,LogTimer1,LogTimer2;
-struct TimeStamp TNow;
-
 
  //Accell data variables
  SHORT X1out_12_bit, Y1out_12_bit, Z1out_12_bit, X2out_12_bit, Y2out_12_bit, Z2out_12_bit;
@@ -101,21 +96,41 @@ FIL file1, file2;      /* File objects */
 
 
 /* Interrupt service routine of external int 1    */
-void __ISR(_EXTERNAL_1_VECTOR,IPL2SRS) INT1InterruptHandler(void)                   //Acellerometer 1 : Data Ready
-{ 
- //LATDbits.LATD5 = 1;   // Set LED
- DataReady1 = 1;
- INTClearFlag(INT_INT1);       
+void __ISR(_EXTERNAL_1_VECTOR,IPL7AUTO) INT1InterruptHandler(void){                   //Acellerometer 1 : Data Ready
+    
+    //LATDbits.LATD5 = 1;   // Set LED
+    DataReady1 = 1;
+
+    if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1, &Accel1ReadStatus))                // Read data output registers 0x01-0x06
+    {
+        Temp_INT_SOURCE_REG = 0;
+        drvI2CReadRegisters(INT_SOURCE, &Temp_INT_SOURCE_REG, 1, MMA8452Q_ADDR_1, &Accel1ReadStatus);
+
+        // 12-bit accelerometer data
+      //  X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
+       // Y1out_12_bit = ((short) (ucDataArray[2]<<8 | ucDataArray[3])) >> 4;                // Compute 12-bit Y-axis acceleration output value
+       // Z1out_12_bit = ((short) (ucDataArray[4]<<8 | ucDataArray[5])) >> 4;                // Compute 12-bit Z-axis acceleration output value
+
+        // Accelerometer data converted to g's
+      //  X1out_g = ((float) X1out_12_bit) / SENSITIVITY_2G;                                 // Compute X-axis output value in g's
+      //  Y1out_g = ((float) Y1out_12_bit) / SENSITIVITY_2G;                                 // Compute Y-axis output value in g's
+      //  Z1out_g = ((float) Z1out_12_bit) / SENSITIVITY_2G;                                 // Compute Z-axis output value in g's
+
+    }
+
+    INTClearFlag(INT_INT1);                                                     //Clear the interrupt flag as we exit 
  
 } 
    
 /* Interrupt service routine of external int 4    */
-void __ISR(_EXTERNAL_4_VECTOR,IPL2SRS) INT4InterruptHandler(void)                   //Acellerometer 2 : Data Ready
+/*
+ * void __ISR(_EXTERNAL_4_VECTOR,IPL7AUTO) INT4InterruptHandler(void)                   //Acellerometer 2 : Data Ready
 { 
  //LATDbits.LATD5 = 0;   // Clear LED
  DataReady2 = 1;
  INTClearFlag(INT_INT4);       
 }
+*/
 
 /*****************************************************************************
  * Function:        void CoreTimerHandler(void)
@@ -141,6 +156,9 @@ void __ISR(_CORE_TIMER_VECTOR, IPL2SOFT) CoreTimerHandler(void)
    disk_timerproc();   // call the low level disk IO timer functions
    tick++;            // increment the benchmarking timer
 
+   if (++mSec_CurrentCount >= 86400030) //Allow up to 24 hours worth of timing
+        mSec_CurrentCount = 0;
+      
    // implement a 'fake' RTCC
    if (++irtc_mSec >= 1000) {
       irtc_mSec = 0;
@@ -164,8 +182,9 @@ void __ISR(_CORE_TIMER_VECTOR, IPL2SOFT) CoreTimerHandler(void)
       }
    }
 
-   TimeUpdated = 1;
-
+   func_GetRemainingTime_ms(&msTestCycleTimer, mSec_CurrentCount);              // Update the test cycle timer
+// func_GetRemainingTime_ms(&msLogTimer1, mSec_CurrentCount);
+// func_GetRemainingTime_ms(&msLogTimer2, mSec_CurrentCount);
 }
 
 /*********************************************************************
@@ -196,58 +215,6 @@ DWORD get_fattime(void)
    return tmr;
 }
 
-/*********************************************************************
- * Function:        void Func_InitializeBoard(void)
- * PreCondition:
- * Input:           None
- * Output:          None
- * Side Effects:
- * Overview:     Used to initialize board parameters
- * Note:
- ********************************************************************/
-void Func_InitializeBoard(){
-    
-    //Setup interrupts
- //removed temporarily
- //ConfigINT1(EXT_INT_PRI_2 | RISING_EDGE_INT | EXT_INT_ENABLE); // Config INT1              //Acellerometer 1 : Data Ready
-
-// ConfigINT4(EXT_INT_PRI_2 | RISING_EDGE_INT | EXT_INT_ENABLE); // Config INT4              //Acellerometer 2 : Data Ready
-
- INTConfigureSystem(INT_SYSTEM_CONFIG_MULT_VECTOR);
- INTEnableInterrupts();
-
-// Enable optimal performance
-INTEnableSystemMultiVectoredInt();
-SYSTEMConfigPerformance(GetSystemClock());
-mOSCSetPBDIV(OSC_PB_DIV_1);            // Use 1:1 CPU Core:Peripheral clocks
-OpenCoreTimer(CORE_TICK_RATE);         // Open 1 ms Timer
-
-
-// set up the core timer interrupt with a priority of 2 and zero sub-priority
-mConfigIntCoreTimer((CT_INT_ON | CT_INT_PRIOR_2 | CT_INT_SUB_PRIOR_0));
-
-//Pin Config
-AD1PCFG = 0xFFFE;        //set all AN pins to digital except AN0
-        
-//Set Pin Directions
-TRISB = 0b1000000000100001;       //AREF, VBUSON, USB_Fault set to input
-TRISCbits.TRISC13 = 0;              
-TRISCbits.TRISC14 = 0;
-TRISD = 0b1000011000100001;       //BUT, SDA, SCL set to input
-TRISE = 0x0000;
-TRISFbits.TRISF1 = 0;
-//TRISF = 0x0000;
-//
-
-// Set pin Values
-LATB = 0x0000;
-LATCbits.LATC13 = 0;
-LATCbits.LATC14 = 0;  
-LATD = 0x0000;
-LATE = 0x0000;
-LATFbits.LATF1 = 0; 
-
-}
 
 /*********************************************************************
  * Function:        void Func_ShowImAlive(void)
@@ -262,9 +229,9 @@ void Func_ShowImAlive(){
     int iTempCount;
     for(iTempCount = 0; iTempCount <= 5; iTempCount++){
         LATDbits.LATD1 = 1; 
-        delay_ms (500);
+        delay_ms (200);
         LATDbits.LATD1 = 0; 
-        delay_ms (500);
+        delay_ms (200);
     }
     
 }
@@ -276,43 +243,46 @@ void Func_ShowImAlive(){
 * Returns: Nothing
 *
 * Description: Program entry point, logs data for a 24 hour period then writes
-*              it to a TEXT filei n an SD card
+*              it to a TEXT file n an SD card
 *
 *******************************************************************************/
 
 int main (void)
 {
-    
+ 
+/******************************************************************************/
 //Initialize the board
-//Func_InitializeBoard();
+/******************************************************************************/
     
-   //Setup interrupts
- //removed temporarily
- //ConfigINT1(EXT_INT_PRI_2 | RISING_EDGE_INT | EXT_INT_ENABLE); // Config INT1              //Acellerometer 1 : Data Ready
 
-// ConfigINT4(EXT_INT_PRI_2 | RISING_EDGE_INT | EXT_INT_ENABLE); // Config INT4              //Acellerometer 2 : Data Ready
-
- INTConfigureSystem(INT_SYSTEM_CONFIG_MULT_VECTOR);
- INTEnableInterrupts();
-
-// Enable optimal performance
 INTEnableSystemMultiVectoredInt();
-SYSTEMConfigPerformance(GetSystemClock());
-mOSCSetPBDIV(OSC_PB_DIV_1);            // Use 1:1 CPU Core:Peripheral clocks
-OpenCoreTimer(CORE_TICK_RATE);         // Open 1 ms Timer
-
-
-// set up the core timer interrupt with a priority of 2 and zero sub-priority
-mConfigIntCoreTimer((CT_INT_ON | CT_INT_PRIOR_2 | CT_INT_SUB_PRIOR_0));
+SYSTEMConfigPerformance(GetSystemClock());                                      // Enable optimal performance
+mOSCSetPBDIV(OSC_PB_DIV_1);                                                     // Use 1:1 CPU Core:Peripheral clocks
+OpenCoreTimer(CORE_TICK_RATE);                                                  // Open 1 ms Timer
+INTConfigureSystem(INT_SYSTEM_CONFIG_MULT_VECTOR);
+ 
 
 //Pin Config
-AD1PCFG = 0xFFFE;        //set all AN pins to digital except AN0
+AD1PCFG = 0xFFFF;                                                               //set all AN pins to digital except AN0
         
 //Set Pin Directions
 TRISB = 0b1000000000100001;       //AREF, VBUSON, USB_Fault set to input
 TRISCbits.TRISC13 = 0;              
 TRISCbits.TRISC14 = 0;
-TRISD = 0b1000011000100001;       //BUT, SDA, SCL set to input
+
+TRISDbits.TRISD0 = 0x1;
+TRISDbits.TRISD1 = 0x0;
+TRISDbits.TRISD2 = 0x0;
+TRISDbits.TRISD3 = 0x0;
+TRISDbits.TRISD4 = 0x0;
+TRISDbits.TRISD5 = 0x0;
+TRISDbits.TRISD6 = 0x0;
+TRISDbits.TRISD7 = 0x0;
+TRISDbits.TRISD8 = 0x1;
+TRISDbits.TRISD9 = 0x1;    
+TRISDbits.TRISD10 = 0x1;
+TRISDbits.TRISD11 = 0x1;    
+//TRISD = 0b0000111100100001;       //BUT, SDA, SCL set to input
 TRISE = 0x0000;
 TRISFbits.TRISF1 = 0;
 //TRISF = 0x0000;
@@ -326,119 +296,93 @@ LATD = 0x0000;
 LATE = 0x0000;
 LATFbits.LATF1 = 0; 
 
-//Initialize the current time Struct and other timer vars
-//struct TimeStamp TNow;
-func_InitializeTime(&TNow);
 
-//Scan the network for connected devices - if detected then allow trying to
-// read from them.
-//============================================================================//
-iDeviceCount = ScanNetwork();
+// set up the core timer interrupt with a priority of 2 and zero sub-priority
+mConfigIntCoreTimer((CT_INT_ON | CT_INT_PRIOR_2 | CT_INT_SUB_PRIOR_0));
+
+   //Setup interrupts
+ //removed temporarily
+ ConfigINT1(EXT_INT_PRI_7 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT1              //Acellerometer 1 : Data Ready
+SetSubPriorityINT1(EXT_INT_SUB_PRI_3);
+
+// ConfigINT4(EXT_INT_PRI_7 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT4             //future
+//SetSubPriorityINT4(EXT_INT_SUB_PRI_2);
+
+INTEnableInterrupts();
 
 //Blink the LED on power-up
 Func_ShowImAlive();
 
+//Scan the network for connected devices - if detected then allow trying to
+// read from them.
+//============================================================================//
+iDeviceCount = ScanNetwork(ucAddressArray);                         
 
+//ucAddressArray[0] = 0;
+//ucAddressArray[1] = 0x1d;
+//ucAddressArray[2] = 0;
 
+//iDeviceCount = 1;
 
-
-//printf((const char *)"Reading Values \r\n");
-    //printf ((const char *)"iInputValue = %d \r\n", iInputValue);
-if(0 < iDeviceCount)  //initializes the i2c netwrk and scans for devices
+if(0 < iDeviceCount)                                                            //initialize the i2c network 
 {
     //Now Initialise and calibrate each MMA8452
     for(iTempCount = 1; iTempCount <=2; iTempCount++)
     {
-        initMMA8452Q(ucAddressArray[iTempCount]);
-        MMA8652FC_Calibration(ucDataArray, ucAddressArray[iTempCount]);
+        if((ucAddressArray[iTempCount] == 0x1C) || (ucAddressArray[iTempCount] == 0x1D)){
+        ucCurrentAddress = ucAddressArray[iTempCount];
+        initMMA8452Q(ucCurrentAddress);                                         //initialize the accelerometers
+        MMA8652FC_Calibration(ucDataArray, ucCurrentAddress);                   //calibrate the accelerometers
+        }
     }
 
-    //Initialize the timers
-    //========================================================================//
-   // TestCycleTimer.StartTime = Func_StartTimer(TestCycleTimer);
-    TestCycleTimer.StartTime = TNow;                                            //Main cycle timer
-    TestCycleTimer.Setpt.hr = 1;
-    func_GetRemainingTime(&TestCycleTimer, &TNow);
 
-    LogTimer1.StartTime = TNow;
-    LogTimer1.Setpt.sec = 30;
-    func_GetRemainingTime(&LogTimer1, &TNow);
+    //Timer for test run time
+    msTestCycleTimer.StartTime = mSec_CurrentCount;                                            //Main cycle timer
+    msTestCycleTimer.Setpt = 3600000; // 1 hour
+    func_GetRemainingTime_ms(&msTestCycleTimer, mSec_CurrentCount);
 
-    LogTimer2.StartTime = TNow;
-    LogTimer2.Setpt.sec = 30;
-    func_GetRemainingTime(&LogTimer2, &TNow);
+/*
+    //Timer for logging reads on accel 1
+    msLogTimer1.StartTime = mSec_CurrentCount;                
+    msLogTimer1.Setpt = 30000;  //30 sec
+    func_GetRemainingTime_ms(&msLogTimer1, mSec_CurrentCount);
 
-    while(!TestCycleTimer.TimerComplete)
+    //Timer for logging reads on accel 2
+    msLogTimer2.StartTime = mSec_CurrentCount;
+    msLogTimer2.Setpt = 30000; //30 sec
+    func_GetRemainingTime_ms(&msLogTimer2, mSec_CurrentCount);
+*/ 
+        
+    
+    while(!msTestCycleTimer.TimerComplete)
     {
-        //Update the System Timer and the remaining times
+
+        //Check if a read is in progress (initiated via interrupt)
         //====================================================================//
-        if(TimeUpdated == 1)
+        if(DataReady1==1) //triggered by interrupt (DataReady1==1 : read not completed in isr so continue here)
         {
-            TimeUpdated = 0;
-            Func_UpdateSystemTime(&TNow, rtcYear, rtcMon, rtcMday, rtcHour, rtcMin, rtcSec, irtc_mSec);
-            func_GetRemainingTime(&TestCycleTimer, &TNow);
-            func_GetRemainingTime(&LogTimer1, &TNow);
-            func_GetRemainingTime(&LogTimer2, &TNow);
-        }
+            
 
-        //Check if data is ready on either accelerometer
-        //====================================================================//
-        if((DataReady1 == 1) || (DataReady2==1))
-        {
-             if(DataReady1==1)
-             {
-                 //Reset the interrupt flag
-                 DataReady1 = 0;
-     
-                 if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1))                // Read data output registers 0x01-0x06
-                 {
-                     //printf((const char *)"\r\n\r\n Acc 1 data ready");
+            if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1, &Accel1ReadStatus))                // Read data output registers 0x01-0x06
+            {
+                Temp_INT_SOURCE_REG = 0;
+                drvI2CReadRegisters(INT_SOURCE, &Temp_INT_SOURCE_REG, 1, MMA8452Q_ADDR_1, &Accel1ReadStatus);
+                
+                //Reset the Data Ready flag
+                DataReady1 = 0;
+            
+                // 12-bit accelerometer data
+             //   X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
+             //   Y1out_12_bit = ((short) (ucDataArray[2]<<8 | ucDataArray[3])) >> 4;                // Compute 12-bit Y-axis acceleration output value
+             //   Z1out_12_bit = ((short) (ucDataArray[4]<<8 | ucDataArray[5])) >> 4;                // Compute 12-bit Z-axis acceleration output value
 
-                     // 12-bit accelerometer data
-                     X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
-                     Y1out_12_bit = ((short) (ucDataArray[2]<<8 | ucDataArray[3])) >> 4;                // Compute 12-bit Y-axis acceleration output value
-                     Z1out_12_bit = ((short) (ucDataArray[4]<<8 | ucDataArray[5])) >> 4;                // Compute 12-bit Z-axis acceleration output value
-
-                     // Accelerometer data converted to g's
-                     X1out_g = ((float) X1out_12_bit) / SENSITIVITY_2G;                                 // Compute X-axis output value in g's
-                     Y1out_g = ((float) Y1out_12_bit) / SENSITIVITY_2G;                                 // Compute Y-axis output value in g's
-                     Z1out_g = ((float) Z1out_12_bit) / SENSITIVITY_2G;                                 // Compute Z-axis output value in g's
-
-                     if(LogTimer1.TimerComplete)
-                     {
-                         //printf ((const char *)"\r\n\r\n Acc 1 x_out = %f, y_out = %f, z_out = %f ", X2out_g, Y2out_g, Z2out_g);
-                         LogTimer1.StartTime = TNow;
-                     }
-                 }
-             }
-
-             if(DataReady2==1)
-             {
-                 DataReady2 = 0;
-
-                 if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1))                // Read data output registers 0x01-0x06
-                 {
-                     //printf((const char *)"\r\n\r\n Acc 2 data ready");
-
-                     // 12-bit accelerometer data
-                     X2out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
-                     Y2out_12_bit = ((short) (ucDataArray[2]<<8 | ucDataArray[3])) >> 4;                // Compute 12-bit Y-axis acceleration output value
-                     Z2out_12_bit = ((short) (ucDataArray[4]<<8 | ucDataArray[5])) >> 4;                // Compute 12-bit Z-axis acceleration output value
-
-                         // Accelerometer data converted to g's
-                     X2out_g = ((float) X2out_12_bit) / SENSITIVITY_2G;                                 // Compute X-axis output value in g's
-                     Y2out_g = ((float) Y2out_12_bit) / SENSITIVITY_2G;                                 // Compute Y-axis output value in g's
-                     Z2out_g = ((float) Z2out_12_bit) / SENSITIVITY_2G;                                 // Compute Z-axis output value in g's
-
-                     if(LogTimer2.TimerComplete)
-                     {
-                         //printf ((const char *)"\r\n\r\n Acc 2 x_out = %f, y_out = %f, z_out = %f ", X2out_g, Y2out_g, Z2out_g);
-
-                         LogTimer2.StartTime = TNow;
-                     }
-                 }
-             }
-        }
+                // Accelerometer data converted to g's
+             //   X1out_g = ((float) X1out_12_bit) / SENSITIVITY_2G;                                 // Compute X-axis output value in g's
+             //   Y1out_g = ((float) Y1out_12_bit) / SENSITIVITY_2G;                                 // Compute Y-axis output value in g's
+             //   Z1out_g = ((float) Z1out_12_bit) / SENSITIVITY_2G;                                 // Compute Z-axis output value in g's
+            }
+        }  
     }
 }
 
@@ -507,6 +451,7 @@ f_mount(0,NULL);
 //delay some time
 delay_ms(1000);
 
+return 0;
 }
 
 

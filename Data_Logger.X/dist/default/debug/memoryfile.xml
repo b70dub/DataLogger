@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?> 
 <project>                                  
-  <executable name="dist/default/production/Data_Logger.X.production.elf">                 
+  <executable name="dist/default/debug/Data_Logger.X.debug.elf">                 
     <memory name="program">                 
       <units>bytes</units>                 
       <length>269824</length>                 
-      <used>38024</used>                     
-      <free>231800</free>                     
+      <used>38044</used>                     
+      <free>231780</free>                     
     </memory>                              
     <memory name="data">              
       <units>bytes</units>                 
       <length>32768</length>                 
-      <used>7728</used>                     
-      <free>25040</free>                     
+      <used>8240</used>                     
+      <free>24528</free>                     
     </memory>                              
   </executable>                            
 </project>                                 

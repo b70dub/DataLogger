@@ -12,9 +12,6 @@
 extern "C" {
 #endif
 
-//#include "HardwareProfile.h"
-//#include "GLOBAL_VARS.h"
-//#include <xc.h>
 #include "pic32mx\include\xc.h"
 
 
@@ -31,18 +28,37 @@ extern "C" {
 
 #define FCL        800000// 400000 // Check the max speed supported by your peripheral!!
 
-#define I2C_DEBUG 0 // Change to 1 for debug messages
+#define I2C_DEBUG   0 // Change to 1 for debug messages
  
+/******************************************************************************
+*I2C - typedefs/structs
+******************************************************************************/
+typedef struct I2C_ReadStatuses {
+    BOOL Successful;
+    BOOL Error;
+    UINT8 StepNo;
+    UINT ReadTries;
+    UINT StopDelayCount;
+    
+    
+};
 
+typedef struct I2C_SendStatuses {
+    BOOL Successful;
+    BOOL Error;
+    UINT8 StepNo;
+};
 
-static void I2C_Idle(void);
+/******************************************************************************
+*I2C - functions
+******************************************************************************/
+BOOL get_ack_status(UINT8 address);
+static BOOL I2C_Idle(void);
 static BOOL I2C_Start(void);
-static void I2C_Stop(void);
+static BOOL I2C_Stop(void);
 static BOOL I2C_SendByte(BYTE data);
-
-
 void drvI2CInit(void);
-BOOL drvI2CReadRegisters(UINT8 reg, UINT8* rxPtr, UINT8 len, UINT8 slave_adr);
+BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slave_adr, volatile struct I2C_ReadStatuses* ReadStatus);//UINT8 slave_adr
 BOOL drvI2CWriteRegisters(UINT8 reg, UINT8* data, UINT8 len, UINT8 slave_adr);
 BOOL drvI2CWriteByte(UINT8 reg, UINT8 byte, UINT8 slave_adr );
 

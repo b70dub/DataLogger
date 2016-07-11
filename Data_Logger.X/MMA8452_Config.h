@@ -35,7 +35,7 @@ extern "C" {
 #define SRC_FF_MT_BIT       0x2
 #define SRC_DRDY_BIT        0x0
 #define WHO_AM_I            0x0D
-#define I_AM_MMA8452Q       0x2A // read addr WHO_AM_I, expect I_AM_MMA8452Q
+//#define WHO_AM_I            0x2A // read addr WHO_AM_I,
 #define XYZ_DATA_CFG_REG    0x0E
 #define FS_2G               0x00
 #define FS_4G               0x01
@@ -103,8 +103,9 @@ extern "C" {
 short Xout_12_bit, Yout_12_bit, Zout_12_bit;
 float Xout_g, Yout_g, Zout_g;
 
-unsigned char ucDataArray[10];
-unsigned char ucAddressArray[3];
+//UINT8 ucDataArray[10];
+UINT8 ucAddressArray[3];
+UINT8 ucCurrentAddress;
 
 void MMA8452Q_SetMode(UINT8 slave_adr, int iMode);
 

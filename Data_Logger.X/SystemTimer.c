@@ -1,7 +1,7 @@
 #include "SystemTimer.h"
 
 //This function initializes the current time (TNow) structure
-void func_InitializeTime(struct TimeStamp* TimeNow){
+void func_InitializeTime(struct rtcTimeStamp* TimeNow){
     TimeNow->year = 0;
     TimeNow->month = 0;
     TimeNow->day = 0;
@@ -11,7 +11,7 @@ void func_InitializeTime(struct TimeStamp* TimeNow){
     TimeNow->msec = 0;
 }
 /*
-struct Timer Func_StartTimer(struct Timer ThisTimer){
+struct rtcTimer Func_StartTimer(struct rtcTimer ThisTimer){
     ThisTimer->StartTime.year    = TNow.year;
     ThisTimer->StartTime.month   = TNow.month;
     ThisTimer->StartTime.day     = TNow.day;
@@ -32,7 +32,7 @@ struct Timer Func_StartTimer(struct Timer ThisTimer){
  * Overview:     This function updates the TNow structure with the current values
  * Note:
  ********************************************************************/
-void Func_UpdateSystemTime(struct TimeStamp* TimeNow, BYTE rtcYear, BYTE rtcMon, BYTE rtcMday, BYTE rtcHour, BYTE rtcMin, BYTE rtcSec, int irtc_mSec){
+void Func_UpdateSystemTime(struct rtcTimeStamp* TimeNow, BYTE rtcYear, BYTE rtcMon, BYTE rtcMday, BYTE rtcHour, BYTE rtcMin, BYTE rtcSec, int irtc_mSec){
 
    if (TimeNow->msec != irtc_mSec) {
       TimeNow->msec = irtc_mSec;
@@ -58,20 +58,65 @@ void Func_UpdateSystemTime(struct TimeStamp* TimeNow, BYTE rtcYear, BYTE rtcMon,
 
 }
 
-
+/*
 //This funtion will return how much time has passed for a given setpoint and start time
-void func_GetRemainingTime(struct Timer* ThisTimer, struct TimeStamp* TimeNow){
-//void func_GetRemainingTime(struct Timer ThisTimer){
+void func_GetRemainingTime_rtc(struct rtcTimer* ThisTimer, struct rtcTimeStamp* TimeNow){
+    BYTE Temp_year, Temp_month, Temp_day, Temp_hour, Temp_min, Temp_sec;
+    int Temp_msec;
 
-    ThisTimer->RemainingTime.year = TimeNow->year - (ThisTimer->StartTime.year + ThisTimer->Setpt.year);
-    ThisTimer->RemainingTime.month = TimeNow->month - (ThisTimer->StartTime.month + ThisTimer->Setpt.month);
-    ThisTimer->RemainingTime.day = TimeNow->day - (ThisTimer->StartTime.day + ThisTimer->Setpt.day);
-    ThisTimer->RemainingTime.hr = TimeNow->hr - (ThisTimer->StartTime.hr + ThisTimer->Setpt.hr);
-    ThisTimer->RemainingTime.min = TimeNow->min - (ThisTimer->StartTime.min + ThisTimer->Setpt.min);
-    ThisTimer->RemainingTime.sec = TimeNow->sec - (ThisTimer->StartTime.sec + ThisTimer->Setpt.sec);
-    ThisTimer->RemainingTime.msec = TimeNow->msec - (ThisTimer->StartTime.msec + ThisTimer->Setpt.msec);
+    
+    Temp_year = ThisTimer->Setpt.year -  (TimeNow->year - ThisTimer->StartTime.year);
+    
+    Temp_month = ThisTimer->Setpt.month - (TimeNow->month - ThisTimer->StartTime.month);
+    Temp_day = ThisTimer->Setpt.day - (TimeNow->day - ThisTimer->StartTime.day);
+    Temp_hour = ThisTimer->Setpt.hr - (TimeNow->hr - ThisTimer->StartTime.hr);
+    Temp_min = ThisTimer->Setpt.min - (TimeNow->min - ThisTimer->StartTime.min);
+    Temp_sec = ThisTimer->Setpt.sec - (TimeNow->sec - ThisTimer->StartTime.sec);
+    
+    Temp_msec = ThisTimer->Setpt.msec - (TimeNow->msec - ThisTimer->StartTime.msec);
+    
+    if((Temp_msec < 0) && (Temp_sec > 0))
+    {
+        Temp_sec--;
+        Temp_msec = 1000 + Temp_msec;
+    }
+    
+    else if((Temp_sec < 0) && (Temp_min > 0))
+    {
+        Temp_min--;
+        Temp_sec = 60 + Temp_sec;
+    }
+    
+    else if((Temp_min < 0) && (Temp_hour > 0))
+    {
+        Temp_hour--;
+        Temp_min = 60 + Temp_min;
+    }
+      
+
+    ThisTimer->RemainingTime.year = 
+    ThisTimer->RemainingTime.month =
+    ThisTimer->RemainingTime.day =
+    ThisTimer->RemainingTime.hr =  
+    ThisTimer->RemainingTime.min =        
+    ThisTimer->RemainingTime.msec =
+    
 
     if((ThisTimer->RemainingTime.msec > 0) || (ThisTimer->RemainingTime.sec > 0)|| (ThisTimer->RemainingTime.min > 0) || (ThisTimer->RemainingTime.hr > 0) || (ThisTimer->RemainingTime.day > 0) || (ThisTimer->RemainingTime.month > 0) || (ThisTimer->RemainingTime.year > 0))
+        ThisTimer->TimerComplete = FALSE;
+    else
+        ThisTimer->TimerComplete = TRUE;
+
+}
+*/
+
+//This funtion will return how much time (in milliseconds) has passed for a given setpoint and start time
+void func_GetRemainingTime_ms(struct msTimer* ThisTimer, int CurrentCount){
+    
+
+    ThisTimer->RemainingTime = ThisTimer->Setpt - (CurrentCount - ThisTimer->StartTime);
+
+    if(ThisTimer->RemainingTime > 0)
         ThisTimer->TimerComplete = FALSE;
     else
         ThisTimer->TimerComplete = TRUE;
