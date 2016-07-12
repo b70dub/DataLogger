@@ -96,11 +96,9 @@ FIL file1, file2;      /* File objects */
 
 
 /* Interrupt service routine of external int 1    */
-void __ISR(_EXTERNAL_1_VECTOR,IPL7AUTO) INT1InterruptHandler(void){                   //Acellerometer 1 : Data Ready
+void __ISR(_EXTERNAL_1_VECTOR,IPL7AUTO) INT1InterruptHandler(void){             //Acellerometer 1 : Data Ready
     
     INTClearFlag(INT_INT1);                                                     //Clear the interrupt flag
-    
-    //LATDbits.LATD5 = 1;   // Set LED
     DataReady1 = 1;
     
     //Turn on the LED
@@ -110,7 +108,6 @@ void __ISR(_EXTERNAL_1_VECTOR,IPL7AUTO) INT1InterruptHandler(void){             
     if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1, &Accel1ReadStatus))                // Read data output registers 0x01-0x06
     {
         DataReady1 = 0;
-
     }
 
     
@@ -120,16 +117,21 @@ void __ISR(_EXTERNAL_1_VECTOR,IPL7AUTO) INT1InterruptHandler(void){             
 
 
 /* Interrupt service routine of external int 4    */
-/*
- * void __ISR(_EXTERNAL_4_VECTOR,IPL7AUTO) INT4InterruptHandler(void)                   //Acellerometer 2 : Data Ready
+
+void __ISR(_EXTERNAL_4_VECTOR,IPL6AUTO) INT4InterruptHandler(void)           //Acellerometer 2 : Data Ready
 { 
- //LATDbits.LATD5 = 0;   // Clear LED
- DataReady2 = 1;
- INTClearFlag(INT_INT4);       
+    INTClearFlag(INT_INT4);                                                     //Clear the interrupt flag
+    DataReady2 = 1;
+
+    //Turn on the LED
+    LATDbits.LATD1 = 1; 
+ 
+    //Kickoff the device read process --> Once this happens then the Master I2C interrupt handler should finish the read
+    if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2, &Accel2ReadStatus))                // Read data output registers 0x01-0x06
+    {
+        DataReady2 = 0;
+    }
 }
-*/
-
-
 
 
 
@@ -170,6 +172,8 @@ Bus Collision events that generate an interrupt are:
 ///////////////////////////////////////////////////////////////////
 void __ISR(_I2C_1_VECTOR, ipl3) _MasterI2CHandler(void)
 {
+    mI2C1MClearIntFlag();
+    
      // check for Slave and Bus events and return as we are not handling these
     if (IFS0bits.I2C1SIF == 1) {
      mI2C1SClearIntFlag();
@@ -181,8 +185,6 @@ void __ISR(_I2C_1_VECTOR, ipl3) _MasterI2CHandler(void)
      mI2C1BClearIntFlag();
      return;
     }
-    
-    mI2C1MClearIntFlag();
     
     if(DataReady1 == 0){
         return;
@@ -384,11 +386,11 @@ mConfigIntCoreTimer((CT_INT_ON | CT_INT_PRIOR_2 | CT_INT_SUB_PRIOR_0));
 
    //Setup interrupts
  //removed temporarily
- ConfigINT1(EXT_INT_PRI_7 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT1              //Acellerometer 1 : Data Ready (External interrupt)
+ConfigINT1(EXT_INT_PRI_7 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT1              //Acellerometer 1 : Data Ready (External interrupt)
 SetSubPriorityINT1(EXT_INT_SUB_PRI_3);
 
-// ConfigINT4(EXT_INT_PRI_7 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT4             //future
-//SetSubPriorityINT4(EXT_INT_SUB_PRI_2);
+ConfigINT4(EXT_INT_PRI_6 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT4             //future
+SetSubPriorityINT4(EXT_INT_SUB_PRI_2);
 
 
 
@@ -447,8 +449,6 @@ if(0 < iDeviceCount)                                                            
     
     while(!msTestCycleTimer.TimerComplete)
     {
-
-        
         //Check if a read is in progress (initiated via interrupt)
         //====================================================================//
         if(DataReady1==1) //triggered by interrupt (DataReady1==1 : read not completed in isr so continue here)
@@ -470,10 +470,29 @@ if(0 < iDeviceCount)                                                            
              //   Z1out_g = ((float) Z1out_12_bit) / SENSITIVITY_2G;                                 // Compute Z-axis output value in g's
             }
         }
-          
+        
+        if(DataReady2==1) //triggered by interrupt (DataReady1==1 : read not completed in isr so continue here)
+        {
+           
+            if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2, &Accel2ReadStatus))                // Read data output registers 0x01-0x06
+            {
+                //Reset the Data Ready flag
+                DataReady2 = 0;
+            
+                // 12-bit accelerometer data
+             //   X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
+             //   Y1out_12_bit = ((short) (ucDataArray[2]<<8 | ucDataArray[3])) >> 4;                // Compute 12-bit Y-axis acceleration output value
+             //   Z1out_12_bit = ((short) (ucDataArray[4]<<8 | ucDataArray[5])) >> 4;                // Compute 12-bit Z-axis acceleration output value
+
+                // Accelerometer data converted to g's
+             //   X1out_g = ((float) X1out_12_bit) / SENSITIVITY_2G;                                 // Compute X-axis output value in g's
+             //   Y1out_g = ((float) Y1out_12_bit) / SENSITIVITY_2G;                                 // Compute Y-axis output value in g's
+             //   Z1out_g = ((float) Z1out_12_bit) / SENSITIVITY_2G;                                 // Compute Z-axis output value in g's
+            }
+        }
+        //Kickoff the device read process --> Once this happens then the Master I2C interrupt handler should finish the read 
     }
 }
-
 
 //Alert user card being initilized
  //printf ((const char *)"Init SDCARD \r\n");

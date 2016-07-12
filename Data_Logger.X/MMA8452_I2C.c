@@ -21,24 +21,23 @@ void MMA8652FC_Calibration (UINT8* ucDataArray_ref, UINT8 slave_adr_Copy)
      {
          AccelReadStatus = Accel1ReadStatus;
          //IF the interrupt has already occurred do a read to clear the data ready bit in the accel
-         if(IFS0bits.T1IF == 1){
-             while(!drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray_ref, 6, slave_adr_Copy, &AccelReadStatus)){ }         // Read data output registers 0x01-0x06))
-         }
+        // if(IFS0bits.T1IF == 1){
+        //     while(!drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray_ref, 6, slave_adr_Copy, &AccelReadStatus)){ }         // Read data output registers 0x01-0x06))
+        // }
          
          //while (DataReady1 == 0){}                                              // Is a first set of data ready?  //this is for using an interrupt to determine if data is available
           //  DataReady1 = 0;
      }
-/*     else if(slave_adr_Copy == MMA8452Q_ADDR_2)
-     {
- *      AccelReadStatus = Accel2ReadStatus;
-         if(IFS0bits.T4IF == 1){
-            while(!drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray_ref, 6, slave_adr_Copy, &AccelReadStatus)){ }          // Read data output registers 0x01-0x06
- *       }
+     else if(slave_adr_Copy == MMA8452Q_ADDR_2){
+        AccelReadStatus = Accel2ReadStatus;
+        // if(IFS0bits.T4IF == 1){
+        //    while(!drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray_ref, 6, slave_adr_Copy, &AccelReadStatus)){ }          // Read data output registers 0x01-0x06
+       // }
          
-         while (DataReady2 == 0){}                                              // Is a second set of data ready?  //this is for using an interrupt to determine if data is available
-            DataReady2 = 0;
+        // while (DataReady2 == 0){}                                              // Is a second set of data ready?  //this is for using an interrupt to determine if data is available
+        //    DataReady2 = 0;
      }
-*/
+
 
      //MMA8452Q_SetMode(slave_adr_Copy, STANDBY);                                        // set to Standby mode
 

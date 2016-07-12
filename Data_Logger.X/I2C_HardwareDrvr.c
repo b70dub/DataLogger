@@ -2,9 +2,11 @@
 //
 //  Generic i2c driver
 //
-//  Author: Govind Mukundan
-//
-//
+//  Original Author: Govind Mukundan Previously only supported up to 100 hz via polling
+//  Modified by: Brian Ankeny
+//  -Modified heavily and changed to remove blocking code from read function. Is now state machine based
+//  -Now supports up to 800 hz 
+//  
 //  ********************************* HISTORY ********************************
 //
 //  Version : 1.0
@@ -171,13 +173,14 @@ static BOOL I2C_Idle(void) {                                                    
    
     if (I2CCONbits.SEN || I2CCONbits.PEN || I2CCONbits.RCEN ||
              I2CCONbits.RSEN || I2CCONbits.ACKEN || I2CSTATbits.TRSTAT){
-        t = 10;
-    }
-    if (t>0){
-
-        t--;
+        //t = 10;
         return FALSE;
     }
+ //   if (t>0){
+
+  //      t--;
+  //      return FALSE;
+ //   }
     else
     {
         return TRUE;
@@ -794,179 +797,6 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                                                  
     }
 }
-
-
-/*BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slave_adr) {     //- Primary Use Function
-
-    UINT8 i, flag, ret, j;
-    flag = 0;
-    ret = FALSE;
-
-    for (i = 0; i < 100; i++) // wait for ACK for some time
-    {
-        //1. i2c start
-        I2C_Start();
-        //2. Set Slave in W Mode
-        I2C_SendByte((slave_adr << 1) | 0);
-        //3. Check ACK
-        I2C_Idle();
-        if (I2CSTATbits.ACKSTAT == 0) // Did we receive an ACK ?
-        {
-            flag = 1;
-            break;
-        }
-    }
-
-    if (!flag) return FALSE; // Exit if there was a problem
-    flag = 0;
-    // 4.if write cmd was successful, put the regno on the bus
-    I2C_SendByte(reg);
-    if (I2CSTATbits.ACKSTAT != 0) // Did we receive an ACK ?
-    {
-        return FALSE; // Exit if there was a problem
-    }
-    // Now that the register addres is setup, we can ask the slave to enter read mode.
-    for (j = 0; j < 100; j++) {
-        //5.Issue a repeated start = a start cond without a prior stop
-        I2C_Start();
-        //6. Set Slave in R mode
-        I2C_SendByte((slave_adr << 1) | 1);
-        //7. Check ACK
-        if (I2CSTATbits.ACKSTAT == 0) // Did we receive an ACK ?
-        {
-            flag = 1;
-            break;
-        }
-    }
-
-    if (!flag) return FALSE; // Exit if there was a problem
-
-    for (i = 0; i < len; i++) //read all the bytes
-    {
-        I2C_Idle();
-        // got the ack, processor is in read mode
-        //8. read the register
-        I2CCONbits.RCEN = 1; // enable master read
-        while (I2CCONbits.RCEN); // wait for byte to be received !(I2CSTATbits.RBF)
-
-        I2C_Idle();
-        I2CSTATbits.I2COV = 0;
-        *(rxPtr + i) = I2CRCV;
-
-        if ((i + 1) == len) {
-            //9. Generate a NACK on last byte
-            I2CCONbits.ACKDT = 1; // send nack
-            I2CCONbits.ACKEN = 1;
-            //10. generate a stop
-            I2C_Stop();
-        } else {
-            I2CCONbits.ACKDT = 0; // send ACK for sequential reads
-            I2CCONbits.ACKEN = 1;
-        }
-
-        ret = TRUE;
-    }
-    return ret;
-}
- 
- static void I2C_Idle(void) {                                                     //- Supporting Function
-    UINT8 t = 255;
-    // Wait until I2C Bus is Inactive 
-    while (I2CCONbits.SEN || I2CCONbits.PEN || I2CCONbits.RCEN ||
-            I2CCONbits.RSEN || I2CCONbits.ACKEN || I2CSTATbits.TRSTAT || t--);
-}
-
-static BOOL I2C_Start(void) {                                                    //- Supporting Function
-    // wait for module idle
-    I2C_Idle();
-    // Enable the Start condition
-    I2CCONbits.SEN = 1;
-
-
-    // Check for collisions
-    if (I2CSTATbits.BCL) {
-        return (FALSE);
-    } else {
-        // wait for module idle
-        I2C_Idle();
-        return (TRUE);
-    }
-}
-
-static void I2C_Stop(void) {                                                     //- Supporting Function
-    int x = 0;
-    // wait for module idle
-    I2C_Idle();
-    //initiate stop bit
-    I2CCONbits.PEN = 1;
-
-    //wait for hardware clear of stop bit
-    while (I2CCONbits.PEN) {
-        if (x++ > 50) break;
-    }
-    I2CCONbits.RCEN = 0;
-    // IFS1bits.MI2C1IF = 0; // Clear Interrupt
-    I2CSTATbits.IWCOL = 0;
-    I2CSTATbits.BCL = 0;
-    // wait for module idle
-    I2C_Idle();
-}
-
-static BOOL I2C_SendByte(BYTE data) {                                            //- Supporting Function
-    
-    
-    //   TBF: Transmit Buffer Full Status bit
-    //      1 = Transmit in progress; I2CxTRN register is full (8-bits of data)
-    //      0 = Transmit complete; I2CxTRN register is empty
-     
-    while(I2CSTATbits.TBF); //Wait till data is transmitted.
-    // Send the byte
-    I2CTRN = data;
-
-    // Check for collisions
-    
-    //  IWCOL: Write Collision Detect bit
-    //      1 = An attempt to write the I2CxTRN register collided because the I2C module is busy.
-    //      This bit must be cleared in software.
-    //      0 = No collision
-     
-    if ((I2CSTATbits.IWCOL == 1)) { //IWCOL 
-        return (FALSE);
-    } else {
-        
-        
-        // TRSTAT: Transmit Status bit
-        //        In I2C Master mode only; applicable to Master Transmit mode.
-        //        1 = Master transmit is in progress (8 bits + ACK)
-        //        0 = Master transmit is not in progress
-        
-        while (I2CSTATbits.TRSTAT); // wait until write cycle is complete
-        
-        
-        // BCL: Master Bus Collision Detect bit
-        //    Cleared when the I2C module is disabled (ON = 0).
-        //    1 = A bus collision has been detected during a master operation
-        //    0 = No collision has been detected
-         
-        if ((I2CSTATbits.BCL == 1)) {
-            return (FALSE);
-        } else {
-            // wait for module idle
-            I2C_Idle();
-            
-          //  if(I2CSTATbits.ACKSTAT == 0)
-          //      return(FALSE);
-          //  else
-                return (TRUE);
-        }
-    }
-}
-
-
-
-*/
-
-
 
 
 /**
