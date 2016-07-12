@@ -10,7 +10,7 @@ void MMA8652FC_Calibration (UINT8* ucDataArray_ref, UINT8 slave_adr_Copy)
 {
      char X_offset, Y_offset, Z_offset;
 
-     UINT8 TempData1;
+     UINT8 TempData1, TempCount, ucDataArray_Temp[6];
      UINT8* TempData = &TempData1;
 
      //DataReady1 = 0;
@@ -25,8 +25,8 @@ void MMA8652FC_Calibration (UINT8* ucDataArray_ref, UINT8 slave_adr_Copy)
              while(!drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray_ref, 6, slave_adr_Copy, &AccelReadStatus)){ }         // Read data output registers 0x01-0x06))
          }
          
-         while (DataReady1 == 0){}                                              // Is a first set of data ready?  //this is for using an interrupt to determine if data is available
-            DataReady1 = 0;
+         //while (DataReady1 == 0){}                                              // Is a first set of data ready?  //this is for using an interrupt to determine if data is available
+          //  DataReady1 = 0;
      }
 /*     else if(slave_adr_Copy == MMA8452Q_ADDR_2)
      {
@@ -42,13 +42,19 @@ void MMA8652FC_Calibration (UINT8* ucDataArray_ref, UINT8 slave_adr_Copy)
 
      //MMA8452Q_SetMode(slave_adr_Copy, STANDBY);                                        // set to Standby mode
 
-     drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray_ref, 6, slave_adr_Copy, &AccelReadStatus);          // Read data output registers 0x01-0x06
+     while(!drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray_ref, 6, slave_adr_Copy, &AccelReadStatus)){}          // Read data output registers 0x01-0x06
 
      MMA8452Q_SetMode(slave_adr_Copy, STANDBY);                                        // set to Standby mode
      
-     Xout_12_bit = ((short) (ucDataArray_ref[0]<<8 | ucDataArray_ref[1])) >> 4; // Compute 12-bit X-axis acceleration output value
-     Yout_12_bit = ((short) (ucDataArray_ref[2]<<8 | ucDataArray_ref[3])) >> 4; // Compute 12-bit Y-axis acceleration output value
-     Zout_12_bit = ((short) (ucDataArray_ref[4]<<8 | ucDataArray_ref[5])) >> 4; // Compute 12-bit Z-axis acceleration output value
+     for(TempCount = 0; TempCount <= 5; TempCount++){
+         ucDataArray_Temp[TempCount] = (UINT8)(*(ucDataArray_ref + TempCount));
+         TempData1 = 0;
+     }
+     
+    
+     Xout_12_bit = ((short) (ucDataArray_Temp[0]<<8 | ucDataArray_Temp[1])) >> 4; // Compute 12-bit X-axis acceleration output value
+     Yout_12_bit = ((short) (ucDataArray_Temp[2]<<8 | ucDataArray_Temp[3])) >> 4; // Compute 12-bit Y-axis acceleration output value
+     Zout_12_bit = ((short) (ucDataArray_Temp[4]<<8 | ucDataArray_Temp[5])) >> 4; // Compute 12-bit Z-axis acceleration output value
 
      X_offset = Xout_12_bit / 2 * (-1);                                         // Compute X-axis offset correction value
      Y_offset = Yout_12_bit / 2 * (-1);                                         // Compute Y-axis offset correction value
@@ -78,7 +84,7 @@ void MMA8452Q_SetMode(UINT8 slave_adr, int iMode) {
         *TempData = 0x00;                   
 
     else if(iMode == 1) // set to Active mode
-        *TempData = 0x19;     //  0x39: ODR = 1.56hz, 0x19 = 100hz, 0x11 = 200hz, 0x09 = 400Hz,Active mode; 
+        *TempData = 0x01;     //  0x39: ODR = 1.56hz, 0x19 = 100hz, 0x11 = 200hz, 0x09 = 400Hz,Active mode, 0x01 = 800Hz,Active mode; 
             
     drvI2CWriteRegisters(CTRL_REG1, TempData, 1, slave_adr);
 }

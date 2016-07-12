@@ -1,3 +1,6 @@
 *.o
 *.d
 *.tmp
+*.elf
+*.map
+*.hex

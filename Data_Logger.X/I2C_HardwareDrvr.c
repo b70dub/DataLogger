@@ -47,18 +47,37 @@ Note 1: The typical value of the Pulse Gobbler Delay (PGD) is 104 ns. Refer
 */
 
 void drvI2CInit(void) {                                                         // Initialization Function
-    UINT16 temp = 0;
-    I2CCON = 0; // reset bits to 0
-    I2CCONbits.I2CEN = 0; // disable module
-    I2CCONbits.DISSLW = 1; // Slew Rate Control: set to 1 for any speed below 400 khz. Set to 0 for 400khz  //Added BTA
-    //I2CBRG = (GetPeripheralClock() / FCL) - (GetPeripheralClock() / 10000000) - 1; //Formula from datasheet
+    
+UINT16 temp = 0;
+I2CCON = 0; // reset bits to 0
+I2CCONbits.I2CEN = 0; // disable module
+I2CCONbits.DISSLW = 0; // Slew Rate Control: set to 1 for any speed below 400 khz. Set to 0 for 400khz  //Added BTA
+//I2CBRG = (GetPeripheralClock() / FCL) - (GetPeripheralClock() / 10000000) - 1; //Formula from datasheet
+
+I2CBRG = 0x02C;  //set based on table above and FPBDIV (see hardwareprofile.h)
+I2CSTAT = 0;
+I2CCONbits.I2CSIDL = 1; // dont operate in idle mode
+//I2CCONbits.SCLREL = 1;
+I2CCONbits.I2CEN = 1; // enable module
+temp = I2CRCV; // clear RBF flag
+    
+//==============================================================================
+// Set up the I2C Master Event interrupt with priority level 
+//==============================================================================
+
+    
+//INTClearFlag( INT_I2C1 ); 
+//INTSetVectorPriority( INT_I2C_1_VECTOR, INT_PRIORITY_LEVEL_2); 
+//INTSetVectorSubPriority( INT_I2C_1_VECTOR, INT_SUB_PRIORITY_LEVEL_1 ); 
+
+ // configure the interrupt priority for the I2C peripheral
+ mI2C1SetIntPriority(I2C_INT_PRI_3);                                            //ISR priority level should match!!!!
+ 
+ // clear pending interrupts and enable I2C interrupts for the master
+ mI2C1MClearIntFlag();
+ EnableIntMI2C1;                                                                //enables the master i2c interrupt  ---> DisableIntMI2C1 // for disable interrupt
   
-    I2CBRG = 0x0C2;  //set based on table above and FPBDIV (see hardwareprofile.h)
-    I2CSTAT = 0;
-    I2CCONbits.I2CSIDL = 1; // dont operate in idle mode
-    //I2CCONbits.SCLREL = 1;
-    I2CCONbits.I2CEN = 1; // enable module
-    temp = I2CRCV; // clear RBF flag
+    
 #if(I2C_DEBUG == 1)
     UART2PrintString("Configured i2c1\n");
 #endif
@@ -112,7 +131,7 @@ UINT8 ScanNetwork(UINT8* ucAddressArray_ref) {
 
     int iTestbit = 0;
 
-    drvI2CInit();
+    
     //printf((const char *)"\n\rStart:\n\r");
 
     //delay_ms(1000);
@@ -147,12 +166,12 @@ UINT8 ScanNetwork(UINT8* ucAddressArray_ref) {
 }
 
 static BOOL I2C_Idle(void) {                                                     //- Supporting Function
-   static UINT8 t = 50;
+   static UINT8 t = 10;
     /* Wait until I2C Bus is Inactive */
    
     if (I2CCONbits.SEN || I2CCONbits.PEN || I2CCONbits.RCEN ||
              I2CCONbits.RSEN || I2CCONbits.ACKEN || I2CSTATbits.TRSTAT){
-        t = 50;
+        t = 10;
     }
     if (t>0){
 
@@ -209,6 +228,9 @@ static BOOL I2C_Stop(void) {                                                    
     if(StopConditionStep == 1){
         if(I2C_Idle()){
             StopConditionStep = 2;
+            
+            //initiate stop bit
+            I2CCONbits.PEN = 1;
         } else {
             return FALSE;
         }
@@ -217,10 +239,6 @@ static BOOL I2C_Stop(void) {                                                    
     
     //Step 2: Set the stop condition
     if(StopConditionStep == 2){
-    
-        //initiate stop bit
-        I2CCONbits.PEN = 1;
-
         //wait for hardware clear of stop bit
         if((!I2CCONbits.PEN) || (StopDelayCount++ > 50)){
             StopConditionStep = 3;
@@ -382,10 +400,12 @@ static BOOL I2C_SendByte(BYTE data){                                            
  * @return Boolean indicating if operation completed successfully or not
  */
 BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slave_adr, volatile struct I2C_ReadStatuses* ReadStatus) {     //- Primary Use Function
-
+//for accel reads len = 6
     UINT8 ret, j;
-    ret = FALSE;
+    BOOL ReturnVal = FALSE;
     static UINT8 ByteCount, ByteReadStep, AddressChkStep, ReadModeStep;
+    
+   INTDisableInterrupts();                                                            //Disable while running
 
     //If the read just started then initialize the read status vars
     if(ReadStatus->StepNo == 0)
@@ -423,17 +443,21 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                                 break;
                             } else{
                                 ReadStatus->ReadTries++;
+                                INTEnableInterrupts();  
                                 return FALSE;
                             }
                         } else {
+                            INTEnableInterrupts(); 
                             return FALSE;
                         }
                         
                     } else {
+                        INTEnableInterrupts(); 
                         return FALSE;
                     }
 
                 } else {
+                    INTEnableInterrupts(); 
                     return FALSE;
                 }
 
@@ -451,13 +475,16 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                             break;
                         } else{
                             ReadStatus->ReadTries++;
+                            INTEnableInterrupts(); 
                             return FALSE;
                         }
                     } else {
+                        INTEnableInterrupts(); 
                         return FALSE;
                     }
 
                 } else {
+                    INTEnableInterrupts(); 
                     return FALSE;
                 }
 
@@ -471,9 +498,11 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                         break;
                     } else{
                         ReadStatus->ReadTries++;
+                        INTEnableInterrupts(); 
                         return FALSE;
                     }
                 } else {
+                    INTEnableInterrupts(); 
                     return FALSE;
                 }
             }
@@ -481,6 +510,7 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
         else{
             ReadStatus->Error = TRUE;                                            // Did we time out? -> Error and return 
             ReadStatus->StepNo = 0;
+            INTEnableInterrupts(); 
             return FALSE;
         }
     }
@@ -493,13 +523,15 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
             if (I2CSTATbits.ACKSTAT != 0){                                      // Did we receive an ACK ?
                 ReadStatus->Error = TRUE;                                            // Did we time out? -> Error and return 
                 ReadStatus->StepNo = 0;
+                INTEnableInterrupts(); 
                 return FALSE;                                              // Exit if there was a problem  (ReadStatus.Successful = False)
             }
             else{
                 ReadStatus->StepNo = 3;
             }
         } else {
-                return FALSE;
+            INTEnableInterrupts(); 
+            return FALSE;
         }
         
     }
@@ -527,17 +559,21 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                                 break;
                             } else{
                                 ReadStatus->ReadTries++;
+                                INTEnableInterrupts(); 
                                 return FALSE;
                             }
                         } else {
+                            INTEnableInterrupts(); 
                             return FALSE;
                         }
                         
                     } else {
+                        INTEnableInterrupts(); 
                         return FALSE;
                     }
 
                 } else {
+                    INTEnableInterrupts(); 
                     return FALSE;
                 }
 
@@ -555,13 +591,16 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                             break;
                         } else{
                             ReadStatus->ReadTries++;
+                            INTEnableInterrupts(); 
                             return FALSE;
                         }
                     } else {
+                        INTEnableInterrupts(); 
                         return FALSE;
                     }
 
                 } else {
+                    INTEnableInterrupts(); 
                     return FALSE;
                 }
 
@@ -576,9 +615,11 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                         break;
                     } else{
                         ReadStatus->ReadTries++;
+                        INTEnableInterrupts(); 
                         return FALSE;
                     }
                 } else {
+                    INTEnableInterrupts(); 
                     return FALSE;
                 }
             }
@@ -586,6 +627,7 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
         else{
             ReadStatus->Error = TRUE;
             ReadStatus->StepNo = 1;
+            INTEnableInterrupts(); 
             return FALSE;
         } 
     }
@@ -622,6 +664,7 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                                     ByteCount++;
                                 }
 
+                                INTEnableInterrupts(); 
                                 return FALSE; 
 
                             } else {
@@ -629,17 +672,22 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                                 I2CCONbits.ACKEN = 1;
 
                                  ByteCount++;
+                                 ByteReadStep = 1;
                             }
 
+                            INTEnableInterrupts(); 
                             return FALSE;
 
                         } else {
+                            INTEnableInterrupts(); 
                             return FALSE;
                         }
                     } else {
+                        INTEnableInterrupts(); 
                         return FALSE;
                     }
                 } else {
+                    INTEnableInterrupts(); 
                     return FALSE;
                 }
                 
@@ -666,6 +714,7 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                                     ByteCount++;
                                 }
 
+                                INTEnableInterrupts(); 
                                 return FALSE;   
                                 
                             } else {
@@ -673,18 +722,22 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                                 I2CCONbits.ACKEN = 1;
 
                                  ByteCount++;
+                                 ByteReadStep = 1;
                             }
 
+                            INTEnableInterrupts(); 
                             return FALSE;
 
                         } else {
+                            INTEnableInterrupts(); 
                             return FALSE;
                         }
                         
                     } else {
+                        INTEnableInterrupts(); 
                         return FALSE;
                     }
-            case 3 : //Step 3: Check for Bus Idle and moved recvd data to storage location
+            case 3 : //Step 3: Check for Bus Idle and move recvd data to storage location
 
                 if(I2C_Idle()){                                                 //WAIT for bus idle again
                     I2CSTATbits.I2COV = 0;                                      //Reset bit incase data came before we extracted the last set of data
@@ -703,6 +756,7 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                             ByteCount++;
                         }
 
+                        INTEnableInterrupts(); 
                         return FALSE; 
                         
                     } else {
@@ -710,11 +764,14 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                         I2CCONbits.ACKEN = 1;
                         
                          ByteCount++;
+                         ByteReadStep = 1;
                     }
                    
+                    INTEnableInterrupts(); 
                     return FALSE;
                     
                 } else {
+                    INTEnableInterrupts(); 
                     return FALSE;
                 }
                
@@ -725,12 +782,14 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                     ByteCount++;
                 }
                   
+                INTEnableInterrupts(); 
                 return FALSE;                   
             }
         }
         
         ReadStatus->StepNo = 0;
         //MMA8452Q_SetMode(slave_adr, ACTIVE); 
+        INTEnableInterrupts(); 
         return TRUE;                                                            //Success
                                                  
     }

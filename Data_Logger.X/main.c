@@ -98,30 +98,27 @@ FIL file1, file2;      /* File objects */
 /* Interrupt service routine of external int 1    */
 void __ISR(_EXTERNAL_1_VECTOR,IPL7AUTO) INT1InterruptHandler(void){                   //Acellerometer 1 : Data Ready
     
+    INTClearFlag(INT_INT1);                                                     //Clear the interrupt flag
+    
     //LATDbits.LATD5 = 1;   // Set LED
     DataReady1 = 1;
-
+    
+    //Turn on the LED
+    LATDbits.LATD1 = 1; 
+        
+    //Kickoff the device read process --> Once this happens then the Master I2C interrupt handler should finish the read
     if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1, &Accel1ReadStatus))                // Read data output registers 0x01-0x06
     {
-        Temp_INT_SOURCE_REG = 0;
-        drvI2CReadRegisters(INT_SOURCE, &Temp_INT_SOURCE_REG, 1, MMA8452Q_ADDR_1, &Accel1ReadStatus);
-
-        // 12-bit accelerometer data
-      //  X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
-       // Y1out_12_bit = ((short) (ucDataArray[2]<<8 | ucDataArray[3])) >> 4;                // Compute 12-bit Y-axis acceleration output value
-       // Z1out_12_bit = ((short) (ucDataArray[4]<<8 | ucDataArray[5])) >> 4;                // Compute 12-bit Z-axis acceleration output value
-
-        // Accelerometer data converted to g's
-      //  X1out_g = ((float) X1out_12_bit) / SENSITIVITY_2G;                                 // Compute X-axis output value in g's
-      //  Y1out_g = ((float) Y1out_12_bit) / SENSITIVITY_2G;                                 // Compute Y-axis output value in g's
-      //  Z1out_g = ((float) Z1out_12_bit) / SENSITIVITY_2G;                                 // Compute Z-axis output value in g's
+        DataReady1 = 0;
 
     }
 
-    INTClearFlag(INT_INT1);                                                     //Clear the interrupt flag as we exit 
+    
  
 } 
-   
+
+
+
 /* Interrupt service routine of external int 4    */
 /*
  * void __ISR(_EXTERNAL_4_VECTOR,IPL7AUTO) INT4InterruptHandler(void)                   //Acellerometer 2 : Data Ready
@@ -131,6 +128,88 @@ void __ISR(_EXTERNAL_1_VECTOR,IPL7AUTO) INT1InterruptHandler(void){             
  INTClearFlag(INT_INT4);       
 }
 */
+
+
+
+
+
+///////////////////////////////////////////////////////////////////
+//
+// Master I2C interrupt handler
+// This handler is called when qualifying I2C Master events occur
+// this means that as well as Slave events 
+// Master and Bus Collision events will also trigger this handler.
+//
+
+/*
+ Master mode operations that generate a master interrupt are:
+?Start Condition ? 1 BRG time after falling edge of SDAx
+?Repeated Start Sequence ? 1 BRG time after falling edge of SDAx
+?Stop Condition ? 1 BRG time after the rising edge of SDAx
+?Data transfer byte received ? Eighth falling edge of SCLx (after receiving eight bits of data from slave)
+?During a Send ACK sequence ? Ninth falling edge of SCLx (after sending ACK or NACK to slave)
+?Data transfer byte transmitted ? Ninth falling edge of SCLx (regardless of receiving ACK from slave)
+?During a slave-detected Stop ? When slave sets the P bit (I2CxSTAT<4>)
+ * 
+Slave mode operations that generate a slave interrupt are:
+?Detection of a valid device address (including general call) ? Ninth falling edge of SCLx
+(after sending ACK to master. Address must match unless the STRICT bit = 1 (I2CxCON<11>) or the GCEN bit =1 (I2CxCON<7>)
+?Reception of data ? Ninth falling edge of SCLx (after sending the ACK to master)
+?Request to transmit data ? Ninth falling edge of SCLx (regardless of receiving an ACK from the master)
+ * 
+Bus Collision events that generate an interrupt are:
+?During a Start sequence ? SDAx sampled before Start condition
+?During a Start sequence ? SCLx = 0 before SDAx = 0
+?During a Start sequence ? SDAx = 0 before BRG time out
+?During a Repeated Start sequence ? If SDAx is sampled 0 when SCLx goes high
+?During a Repeated Start sequence ? If SCLx goes low before SDAx goes low
+?During a Stop sequence ? If SDAx is sampled low after allowing it to float
+?During a Stop sequence ? If SCLx goes low before SDAx goes high
+ */
+
+///////////////////////////////////////////////////////////////////
+void __ISR(_I2C_1_VECTOR, ipl3) _MasterI2CHandler(void)
+{
+     // check for Slave and Bus events and return as we are not handling these
+    if (IFS0bits.I2C1SIF == 1) {
+     mI2C1SClearIntFlag();
+     return;  
+    }
+    
+    //May want to use this later to reset the current i2c operation
+    if (IFS0bits.I2C1BIF == 1) {
+     mI2C1BClearIntFlag();
+     return;
+    }
+    
+    mI2C1MClearIntFlag();
+    
+    if(DataReady1 == 0){
+        return;
+    }
+        
+    //Finish the read process that is currently running
+    if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1, &Accel1ReadStatus))                // Read data output registers 0x01-0x06
+    {
+        //Turn off the LED
+        LATDbits.LATD1 = 0; 
+
+        DataReady1 = 0;
+        
+        // 12-bit accelerometer data
+      //  X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
+       // Y1out_12_bit = ((short) (ucDataArray[2]<<8 | ucDataArray[3])) >> 4;                // Compute 12-bit Y-axis acceleration output value
+       // Z1out_12_bit = ((short) (ucDataArray[4]<<8 | ucDataArray[5])) >> 4;                // Compute 12-bit Z-axis acceleration output value
+
+        // Accelerometer data converted to g's
+      //  X1out_g = ((float) X1out_12_bit) / SENSITIVITY_2G;                                 // Compute X-axis output value in g's
+      //  Y1out_g = ((float) Y1out_12_bit) / SENSITIVITY_2G;                                 // Compute Y-axis output value in g's
+      //  Z1out_g = ((float) Z1out_12_bit) / SENSITIVITY_2G;                                 // Compute Z-axis output value in g's
+        
+    }
+}
+
+
 
 /*****************************************************************************
  * Function:        void CoreTimerHandler(void)
@@ -296,19 +375,28 @@ LATD = 0x0000;
 LATE = 0x0000;
 LATFbits.LATF1 = 0; 
 
+/******************************************************************************/
+//                          Configure the interrupts
+/******************************************************************************/
 
 // set up the core timer interrupt with a priority of 2 and zero sub-priority
 mConfigIntCoreTimer((CT_INT_ON | CT_INT_PRIOR_2 | CT_INT_SUB_PRIOR_0));
 
    //Setup interrupts
  //removed temporarily
- ConfigINT1(EXT_INT_PRI_7 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT1              //Acellerometer 1 : Data Ready
+ ConfigINT1(EXT_INT_PRI_7 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT1              //Acellerometer 1 : Data Ready (External interrupt)
 SetSubPriorityINT1(EXT_INT_SUB_PRI_3);
 
 // ConfigINT4(EXT_INT_PRI_7 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT4             //future
 //SetSubPriorityINT4(EXT_INT_SUB_PRI_2);
 
-INTEnableInterrupts();
+
+
+drvI2CInit();
+
+
+INTDisableInterrupts();
+
 
 //Blink the LED on power-up
 Func_ShowImAlive();
@@ -335,6 +423,8 @@ if(0 < iDeviceCount)                                                            
         MMA8652FC_Calibration(ucDataArray, ucCurrentAddress);                   //calibrate the accelerometers
         }
     }
+    
+    INTEnableInterrupts();
 
 
     //Timer for test run time
@@ -358,17 +448,14 @@ if(0 < iDeviceCount)                                                            
     while(!msTestCycleTimer.TimerComplete)
     {
 
+        
         //Check if a read is in progress (initiated via interrupt)
         //====================================================================//
         if(DataReady1==1) //triggered by interrupt (DataReady1==1 : read not completed in isr so continue here)
         {
-            
-
+           
             if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1, &Accel1ReadStatus))                // Read data output registers 0x01-0x06
             {
-                Temp_INT_SOURCE_REG = 0;
-                drvI2CReadRegisters(INT_SOURCE, &Temp_INT_SOURCE_REG, 1, MMA8452Q_ADDR_1, &Accel1ReadStatus);
-                
                 //Reset the Data Ready flag
                 DataReady1 = 0;
             
@@ -382,7 +469,8 @@ if(0 < iDeviceCount)                                                            
              //   Y1out_g = ((float) Y1out_12_bit) / SENSITIVITY_2G;                                 // Compute Y-axis output value in g's
              //   Z1out_g = ((float) Z1out_12_bit) / SENSITIVITY_2G;                                 // Compute Z-axis output value in g's
             }
-        }  
+        }
+          
     }
 }
 
