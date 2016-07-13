@@ -33,13 +33,26 @@ extern "C" {
 /******************************************************************************
 *I2C - typedefs/structs
 ******************************************************************************/
-typedef struct I2C_ReadStatuses {
+typedef struct I2C_DeviceStatuses {
+    //drvI2CReadRegisters Vars
     BOOL Successful;
     BOOL Error;
     UINT8 StepNo;
-    UINT ReadTries;
-    UINT StopDelayCount;
+    UINT8 ReadTries;
+    UINT8 ByteCount;
+    UINT8 ByteReadStep;
+    UINT8 AddressChkStep;
+    UINT8 ReadModeStep;
     
+    //I2C_SendByte Vars
+    UINT8 SendByteStepNo;
+    
+    //I2C_Stop Vars
+    UINT8 StopConditionStep;
+    UINT8 StopDelayCount;
+    
+    //I2C_Start Vars
+    UINT8 StartConditionStep;
     
 };
 
@@ -52,15 +65,16 @@ typedef struct I2C_SendStatuses {
 /******************************************************************************
 *I2C - functions
 ******************************************************************************/
+UINT8 ScanNetwork(UINT8* ucAddressArray_ref);
 BOOL get_ack_status(UINT8 address);
 static BOOL I2C_Idle(void);
-static BOOL I2C_Start(void);
-static BOOL I2C_Stop(void);
-static BOOL I2C_SendByte(BYTE data);
+static BOOL I2C_Start(volatile struct I2C_DeviceStatuses* CurrentStatus);
+static BOOL I2C_Stop(volatile struct I2C_DeviceStatuses* CurrentStatus);
+static BOOL I2C_SendByte(BYTE data, volatile struct I2C_DeviceStatuses* CurrentStatus);
 void drvI2CInit(void);
-BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slave_adr, volatile struct I2C_ReadStatuses* ReadStatus);//UINT8 slave_adr
-BOOL drvI2CWriteRegisters(UINT8 reg, UINT8* data, UINT8 len, UINT8 slave_adr);
-BOOL drvI2CWriteByte(UINT8 reg, UINT8 byte, UINT8 slave_adr );
+BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slave_adr, volatile struct I2C_DeviceStatuses* CurrentStatus);//UINT8 slave_adr
+BOOL drvI2CWriteRegisters(UINT8 reg, UINT8* data, UINT8 len, UINT8 slave_adr, volatile struct I2C_DeviceStatuses* CurrentStatus);
+BOOL drvI2CWriteByte(UINT8 reg, UINT8 byte, UINT8 slave_adr, volatile struct I2C_DeviceStatuses* CurrentStatus );
 
 
 #ifdef	__cplusplus

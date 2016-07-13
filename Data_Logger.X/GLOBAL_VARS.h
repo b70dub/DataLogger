@@ -16,10 +16,13 @@ extern "C" {
 #endif
 extern volatile UINT8 DataReady1; //Flags for accelerometer interrupts during current reads (so we dont loose the interrupt)
 extern volatile UINT8 DataReady2; //Flags for accelerometer interrupts during current reads (so we dont loose the interrupt)
+extern volatile UINT8 Accel1ReadStarted; 
+extern volatile UINT8 Accel2ReadStarted;
+extern UINT8 InitComplete; 
 extern volatile UINT8 ucDataArray[10];
 extern volatile UINT8 Temp_INT_SOURCE_REG;
 extern volatile struct msTimer msTestCycleTimer, msLogTimer1, msLogTimer2;
-extern volatile struct I2C_ReadStatuses AccelReadStatus, Accel1ReadStatus, Accel2ReadStatus;
+extern volatile struct I2C_DeviceStatuses Accel1Status, Accel2Status;
 
 
 #ifdef	__cplusplus

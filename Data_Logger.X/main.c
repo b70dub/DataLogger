@@ -105,13 +105,13 @@ void __ISR(_EXTERNAL_1_VECTOR,IPL7AUTO) INT1InterruptHandler(void){             
     LATDbits.LATD1 = 1; 
         
     //Kickoff the device read process --> Once this happens then the Master I2C interrupt handler should finish the read
-    if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1, &Accel1ReadStatus))                // Read data output registers 0x01-0x06
-    {
-        DataReady1 = 0;
+    if(DataReady2 == 0){
+        Accel1ReadStarted = 1;
+        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1, &Accel1Status)){                // Read data output registers 0x01-0x06
+            DataReady1 = 0;
+            Accel1ReadStarted = 0;
+        }
     }
-
-    
- 
 } 
 
 
@@ -127,9 +127,12 @@ void __ISR(_EXTERNAL_4_VECTOR,IPL6AUTO) INT4InterruptHandler(void)           //A
     LATDbits.LATD1 = 1; 
  
     //Kickoff the device read process --> Once this happens then the Master I2C interrupt handler should finish the read
-    if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2, &Accel2ReadStatus))                // Read data output registers 0x01-0x06
-    {
-        DataReady2 = 0;
+    if(DataReady1 == 0){
+        Accel2ReadStarted = 1;
+        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2, &Accel2Status)){                // Read data output registers 0x01-0x06
+            DataReady2 = 0;
+            Accel2ReadStarted = 0;
+        }
     }
 }
 
@@ -172,42 +175,70 @@ Bus Collision events that generate an interrupt are:
 ///////////////////////////////////////////////////////////////////
 void __ISR(_I2C_1_VECTOR, ipl3) _MasterI2CHandler(void)
 {
-    mI2C1MClearIntFlag();
-    
      // check for Slave and Bus events and return as we are not handling these
     if (IFS0bits.I2C1SIF == 1) {
      mI2C1SClearIntFlag();
      return;  
     }
     
+     if (IFS0bits.I2C1MIF == 1) {
+     mI2C1MClearIntFlag();
+    }
+    
     //May want to use this later to reset the current i2c operation
     if (IFS0bits.I2C1BIF == 1) {
      mI2C1BClearIntFlag();
-     return;
     }
     
-    if(DataReady1 == 0){
+    if((DataReady1 == 0) && (DataReady2 == 0)){
         return;
     }
-        
+       
+    if((DataReady1 == 1) && (Accel2ReadStarted == 0)){
+        Accel1ReadStarted = 1;
     //Finish the read process that is currently running
-    if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1, &Accel1ReadStatus))                // Read data output registers 0x01-0x06
-    {
-        //Turn off the LED
-        LATDbits.LATD1 = 0; 
+        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1, &Accel1Status))                // Read data output registers 0x01-0x06
+        {
+            //Turn off the LED
+            LATDbits.LATD1 = 0; 
 
-        DataReady1 = 0;
-        
-        // 12-bit accelerometer data
-      //  X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
-       // Y1out_12_bit = ((short) (ucDataArray[2]<<8 | ucDataArray[3])) >> 4;                // Compute 12-bit Y-axis acceleration output value
-       // Z1out_12_bit = ((short) (ucDataArray[4]<<8 | ucDataArray[5])) >> 4;                // Compute 12-bit Z-axis acceleration output value
+            DataReady1 = 0;
+            Accel1ReadStarted = 0;
 
-        // Accelerometer data converted to g's
-      //  X1out_g = ((float) X1out_12_bit) / SENSITIVITY_2G;                                 // Compute X-axis output value in g's
-      //  Y1out_g = ((float) Y1out_12_bit) / SENSITIVITY_2G;                                 // Compute Y-axis output value in g's
-      //  Z1out_g = ((float) Z1out_12_bit) / SENSITIVITY_2G;                                 // Compute Z-axis output value in g's
-        
+            // 12-bit accelerometer data
+          //  X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
+           // Y1out_12_bit = ((short) (ucDataArray[2]<<8 | ucDataArray[3])) >> 4;                // Compute 12-bit Y-axis acceleration output value
+           // Z1out_12_bit = ((short) (ucDataArray[4]<<8 | ucDataArray[5])) >> 4;                // Compute 12-bit Z-axis acceleration output value
+
+            // Accelerometer data converted to g's
+          //  X1out_g = ((float) X1out_12_bit) / SENSITIVITY_2G;                                 // Compute X-axis output value in g's
+          //  Y1out_g = ((float) Y1out_12_bit) / SENSITIVITY_2G;                                 // Compute Y-axis output value in g's
+          //  Z1out_g = ((float) Z1out_12_bit) / SENSITIVITY_2G;                                 // Compute Z-axis output value in g's
+
+        }
+    }
+    if((DataReady2 == 1) && (Accel1ReadStarted == 0)){
+        Accel2ReadStarted = 1;
+    //Finish the read process that is currently running
+        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2, &Accel2Status))                // Read data output registers 0x01-0x06
+        {
+            //Turn off the LED
+            LATDbits.LATD1 = 0; 
+
+            DataReady2 = 0;
+            Accel2ReadStarted = 0;
+
+            // 12-bit accelerometer data
+          //  X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
+           // Y1out_12_bit = ((short) (ucDataArray[2]<<8 | ucDataArray[3])) >> 4;                // Compute 12-bit Y-axis acceleration output value
+           // Z1out_12_bit = ((short) (ucDataArray[4]<<8 | ucDataArray[5])) >> 4;                // Compute 12-bit Z-axis acceleration output value
+
+            // Accelerometer data converted to g's
+          //  X1out_g = ((float) X1out_12_bit) / SENSITIVITY_2G;                                 // Compute X-axis output value in g's
+          //  Y1out_g = ((float) Y1out_12_bit) / SENSITIVITY_2G;                                 // Compute Y-axis output value in g's
+          //  Z1out_g = ((float) Z1out_12_bit) / SENSITIVITY_2G;                                 // Compute Z-axis output value in g's
+
+        }
     }
 }
 
@@ -398,6 +429,7 @@ drvI2CInit();
 
 
 INTDisableInterrupts();
+InitComplete = 0;
 
 
 //Blink the LED on power-up
@@ -425,7 +457,7 @@ if(0 < iDeviceCount)                                                            
         MMA8652FC_Calibration(ucDataArray, ucCurrentAddress);                   //calibrate the accelerometers
         }
     }
-    
+    InitComplete = 1;
     INTEnableInterrupts();
 
 
@@ -451,13 +483,13 @@ if(0 < iDeviceCount)                                                            
     {
         //Check if a read is in progress (initiated via interrupt)
         //====================================================================//
-        if(DataReady1==1) //triggered by interrupt (DataReady1==1 : read not completed in isr so continue here)
-        {
-           
-            if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1, &Accel1ReadStatus))                // Read data output registers 0x01-0x06
+        if((DataReady1==1) && (Accel2ReadStarted == 0)){ //triggered by interrupt (DataReady1==1 : read not completed in isr so continue here)
+            Accel1ReadStarted = 1;
+            if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1, &Accel1Status))                // Read data output registers 0x01-0x06
             {
                 //Reset the Data Ready flag
                 DataReady1 = 0;
+                Accel1ReadStarted = 0;
             
                 // 12-bit accelerometer data
              //   X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
@@ -471,13 +503,13 @@ if(0 < iDeviceCount)                                                            
             }
         }
         
-        if(DataReady2==1) //triggered by interrupt (DataReady1==1 : read not completed in isr so continue here)
-        {
-           
-            if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2, &Accel2ReadStatus))                // Read data output registers 0x01-0x06
+        if((DataReady2==1) && (Accel1ReadStarted == 0)){ //triggered by interrupt (DataReady1==1 : read not completed in isr so continue here)
+            Accel2ReadStarted = 1;
+            if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2, &Accel2Status))                // Read data output registers 0x01-0x06
             {
                 //Reset the Data Ready flag
                 DataReady2 = 0;
+                Accel2ReadStarted = 0;
             
                 // 12-bit accelerometer data
              //   X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
