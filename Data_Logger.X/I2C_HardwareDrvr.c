@@ -222,34 +222,30 @@ static BOOL I2C_Start(volatile struct I2C_DeviceStatuses* CurrentStatus) {      
     
     // Step 1: wait for module idle, set the start condition and check for bus collision
     if(CurrentStatus->StartConditionStep == 1){
-        if(I2C_Idle()){
+     //   if(I2C_Idle()){
             // Enable the Start condition
             I2CCONbits.SEN = 1;
-
-            // Check for collisions
-            if (I2CSTATbits.BCL) {
-                CurrentStatus->StartConditionStep = 1;
-                I2CSTATbits.BCL = 0;
-                return FALSE;
-            } else {
-                CurrentStatus->StartConditionStep = 2;
-            }
-        } else {
+            CurrentStatus->StartConditionStep = 2;
+       //  } else {
             return FALSE;
-        }
+       // }
     } 
    
     //Step 2: Wait for bus idle and reset the step number
     if (CurrentStatus->StartConditionStep == 2){
         
-        // wait for module idle
-        if(I2C_Idle()){
-            CurrentStatus->StartConditionStep = 1;
-            return TRUE;
-        } else {
-            return FALSE;
-        }
+         // Check for collisions
+            if (I2CSTATbits.BCL == 1) {
+                I2CSTATbits.BCL = 0;
+                I2CCONbits.SEN = 1;
+                CurrentStatus->StartConditionStep = 2;
+                return FALSE;
+            } else {
+                CurrentStatus->StartConditionStep = 1;
+                return TRUE;
+            }
     }
+    
 }
 
 static BOOL I2C_Stop(volatile struct I2C_DeviceStatuses* CurrentStatus) {                                                     //- Supporting Function
@@ -441,9 +437,9 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
     BOOL ReturnVal = FALSE;
    // static UINT8 ByteCount, ByteReadStep, AddressChkStep, ReadModeStep;
    
-    if(InitComplete == 1){
-        INTDisableInterrupts();                                                            //Disable while running
-    }
+    //if(InitComplete == 1){
+    //    INTDisableInterrupts();                                                            //Disable while running
+    //}
 
     //If the read just started then initialize the read status vars
     if(CurrentStatus->StepNo == 0)
@@ -480,21 +476,21 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                                 break;
                             } else{
                                 CurrentStatus->ReadTries++;
-                                INTEnableIFInitComplete();
+                                //INTEnableIFInitComplete();
                                 return FALSE;
                             }
                         } else {
-                            INTEnableIFInitComplete(); 
+                            //INTEnableIFInitComplete(); 
                             return FALSE;
                         }
                         
                     } else {
-                        INTEnableIFInitComplete(); 
+                        //INTEnableIFInitComplete(); 
                         return FALSE;
                     }
 
                 } else {
-                    INTEnableIFInitComplete(); 
+                    //INTEnableIFInitComplete(); 
                     return FALSE;
                 }
 
@@ -512,16 +508,16 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                             break;
                         } else{
                             CurrentStatus->ReadTries++;
-                            INTEnableIFInitComplete(); 
+                            //INTEnableIFInitComplete(); 
                             return FALSE;
                         }
                     } else {
-                        INTEnableIFInitComplete(); 
+                        //INTEnableIFInitComplete(); 
                         return FALSE;
                     }
 
                 } else {
-                    INTEnableIFInitComplete(); 
+                    //INTEnableIFInitComplete(); 
                     return FALSE;
                 }
 
@@ -535,11 +531,11 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                         break;
                     } else{
                         CurrentStatus->ReadTries++;
-                        INTEnableIFInitComplete(); 
+                        //INTEnableIFInitComplete(); 
                         return FALSE;
                     }
                 } else {
-                    INTEnableIFInitComplete(); 
+                    //INTEnableIFInitComplete(); 
                     return FALSE;
                 }
             }
@@ -547,7 +543,7 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
         else{
             CurrentStatus->Error = TRUE;                                            // Did we time out? -> Error and return 
             CurrentStatus->StepNo = 0;
-            INTEnableIFInitComplete(); 
+            //INTEnableIFInitComplete(); 
             return FALSE;
         }
     }
@@ -560,14 +556,14 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
             if (I2CSTATbits.ACKSTAT != 0){                                      // Did we receive an ACK ?
                 CurrentStatus->Error = TRUE;                                            // Did we time out? -> Error and return 
                 CurrentStatus->StepNo = 0;
-                INTEnableIFInitComplete(); 
+                //INTEnableIFInitComplete(); 
                 return FALSE;                                              // Exit if there was a problem  (CurrentStatus.Successful = False)
             }
             else{
                 CurrentStatus->StepNo = 3;
             }
         } else {
-            INTEnableIFInitComplete(); 
+            //INTEnableIFInitComplete(); 
             return FALSE;
         }
         
@@ -596,21 +592,21 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                                 break;
                             } else{
                                 CurrentStatus->ReadTries++;
-                                INTEnableIFInitComplete(); 
+                                //INTEnableIFInitComplete(); 
                                 return FALSE;
                             }
                         } else {
-                            INTEnableIFInitComplete(); 
+                            //INTEnableIFInitComplete(); 
                             return FALSE;
                         }
                         
                     } else {
-                        INTEnableIFInitComplete(); 
+                        //INTEnableIFInitComplete(); 
                         return FALSE;
                     }
 
                 } else {
-                    INTEnableIFInitComplete(); 
+                    //INTEnableIFInitComplete(); 
                     return FALSE;
                 }
 
@@ -628,16 +624,16 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                             break;
                         } else{
                             CurrentStatus->ReadTries++;
-                            INTEnableIFInitComplete(); 
+                            //INTEnableIFInitComplete(); 
                             return FALSE;
                         }
                     } else {
-                        INTEnableIFInitComplete(); 
+                        //INTEnableIFInitComplete(); 
                         return FALSE;
                     }
 
                 } else {
-                    INTEnableIFInitComplete(); 
+                    //INTEnableIFInitComplete(); 
                     return FALSE;
                 }
 
@@ -652,11 +648,11 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                         break;
                     } else{
                         CurrentStatus->ReadTries++;
-                        INTEnableIFInitComplete(); 
+                        //INTEnableIFInitComplete(); 
                         return FALSE;
                     }
                 } else {
-                    INTEnableIFInitComplete(); 
+                    //INTEnableIFInitComplete(); 
                     return FALSE;
                 }
             }
@@ -664,7 +660,7 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
         else{
             CurrentStatus->Error = TRUE;
             CurrentStatus->StepNo = 1;
-            INTEnableIFInitComplete(); 
+            //INTEnableIFInitComplete(); 
             return FALSE;
         } 
     }
@@ -701,7 +697,7 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                                     CurrentStatus->ByteCount++;
                                 }
 
-                                INTEnableIFInitComplete(); 
+                                //INTEnableIFInitComplete(); 
                                 return FALSE; 
 
                             } else {
@@ -712,19 +708,19 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                                  CurrentStatus->ByteReadStep = 1;
                             }
 
-                            INTEnableIFInitComplete(); 
+                            //INTEnableIFInitComplete(); 
                             return FALSE;
 
                         } else {
-                            INTEnableIFInitComplete(); 
+                            //INTEnableIFInitComplete(); 
                             return FALSE;
                         }
                     } else {
-                        INTEnableIFInitComplete(); 
+                        //INTEnableIFInitComplete(); 
                         return FALSE;
                     }
                 } else {
-                    INTEnableIFInitComplete(); 
+                    //INTEnableIFInitComplete(); 
                     return FALSE;
                 }
                 
@@ -751,7 +747,7 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                                     CurrentStatus->ByteCount++;
                                 }
 
-                                INTEnableIFInitComplete(); 
+                                //INTEnableIFInitComplete(); 
                                 return FALSE;   
                                 
                             } else {
@@ -762,16 +758,16 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                                  CurrentStatus->ByteReadStep = 1;
                             }
 
-                            INTEnableIFInitComplete(); 
+                            //INTEnableIFInitComplete(); 
                             return FALSE;
 
                         } else {
-                            INTEnableIFInitComplete(); 
+                            //INTEnableIFInitComplete(); 
                             return FALSE;
                         }
                         
                     } else {
-                        INTEnableIFInitComplete(); 
+                        //INTEnableIFInitComplete(); 
                         return FALSE;
                     }
             case 3 : //Step 3: Check for Bus Idle and move recvd data to storage location
@@ -793,7 +789,7 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                             CurrentStatus->ByteCount++;
                         }
 
-                        INTEnableIFInitComplete(); 
+                        //INTEnableIFInitComplete(); 
                         return FALSE; 
                         
                     } else {
@@ -804,11 +800,11 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                          CurrentStatus->ByteReadStep = 1;
                     }
                    
-                    INTEnableIFInitComplete(); 
+                    //INTEnableIFInitComplete(); 
                     return FALSE;
                     
                 } else {
-                    INTEnableIFInitComplete(); 
+                    //INTEnableIFInitComplete(); 
                     return FALSE;
                 }
                
@@ -819,14 +815,14 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                     CurrentStatus->ByteCount++;
                 }
                   
-                INTEnableIFInitComplete(); 
+                //INTEnableIFInitComplete(); 
                 return FALSE;                   
             }
         }
         
         CurrentStatus->StepNo = 0;
         //MMA8452Q_SetMode(slave_adr, ACTIVE); 
-        INTEnableIFInitComplete(); 
+       // INTEnableIFInitComplete(); 
         return TRUE;                                                            //Success
                                                  
     }

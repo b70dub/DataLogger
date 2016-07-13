@@ -98,6 +98,8 @@ FIL file1, file2;      /* File objects */
 /* Interrupt service routine of external int 1    */
 void __ISR(_EXTERNAL_1_VECTOR,IPL7AUTO) INT1InterruptHandler(void){             //Acellerometer 1 : Data Ready
     
+    IEC0bits.INT4IE=0; // disable external interrupt 4
+    
     INTClearFlag(INT_INT1);                                                     //Clear the interrupt flag
     DataReady1 = 1;
     
@@ -110,6 +112,7 @@ void __ISR(_EXTERNAL_1_VECTOR,IPL7AUTO) INT1InterruptHandler(void){             
         if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1, &Accel1Status)){                // Read data output registers 0x01-0x06
             DataReady1 = 0;
             Accel1ReadStarted = 0;
+            IEC0bits.INT4IE=1; // re-enable external interrupt 4
         }
     }
 } 
@@ -120,6 +123,7 @@ void __ISR(_EXTERNAL_1_VECTOR,IPL7AUTO) INT1InterruptHandler(void){             
 
 void __ISR(_EXTERNAL_4_VECTOR,IPL6AUTO) INT4InterruptHandler(void)           //Acellerometer 2 : Data Ready
 { 
+    IEC0bits.INT1IE=0; // disable external interrupt 1
     INTClearFlag(INT_INT4);                                                     //Clear the interrupt flag
     DataReady2 = 1;
 
@@ -132,6 +136,7 @@ void __ISR(_EXTERNAL_4_VECTOR,IPL6AUTO) INT4InterruptHandler(void)           //A
         if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2, &Accel2Status)){                // Read data output registers 0x01-0x06
             DataReady2 = 0;
             Accel2ReadStarted = 0;
+            IEC0bits.INT1IE=1; // re-enable external interrupt 1
         }
     }
 }
@@ -175,6 +180,8 @@ Bus Collision events that generate an interrupt are:
 ///////////////////////////////////////////////////////////////////
 void __ISR(_I2C_1_VECTOR, ipl3) _MasterI2CHandler(void)
 {
+    IEC0bits.INT1IE=0;
+    IEC0bits.INT4IE=0;
      // check for Slave and Bus events and return as we are not handling these
     if (IFS0bits.I2C1SIF == 1) {
      mI2C1SClearIntFlag();
@@ -204,6 +211,8 @@ void __ISR(_I2C_1_VECTOR, ipl3) _MasterI2CHandler(void)
 
             DataReady1 = 0;
             Accel1ReadStarted = 0;
+            IEC0bits.INT1IE=1;
+            IEC0bits.INT4IE=1; // re-enable external interrupt 4
 
             // 12-bit accelerometer data
           //  X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
@@ -227,6 +236,8 @@ void __ISR(_I2C_1_VECTOR, ipl3) _MasterI2CHandler(void)
 
             DataReady2 = 0;
             Accel2ReadStarted = 0;
+            IEC0bits.INT1IE=1; // re-enable external interrupt 1
+            IEC0bits.INT4IE=1;
 
             // 12-bit accelerometer data
           //  X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
@@ -481,6 +492,7 @@ if(0 < iDeviceCount)                                                            
     
     while(!msTestCycleTimer.TimerComplete)
     {
+        /*
         //Check if a read is in progress (initiated via interrupt)
         //====================================================================//
         if((DataReady1==1) && (Accel2ReadStarted == 0)){ //triggered by interrupt (DataReady1==1 : read not completed in isr so continue here)
@@ -523,6 +535,7 @@ if(0 < iDeviceCount)                                                            
             }
         }
         //Kickoff the device read process --> Once this happens then the Master I2C interrupt handler should finish the read 
+         * */
     }
 }
 
