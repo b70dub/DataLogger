@@ -5,6 +5,24 @@
 
 // Wrappers for MMA8452Q.
 
+MMA8452_Setup(iDeviceCount, NumInstalledAccels);
+void MMA8452_Setup(UINT8 NumDevicesDetected, UINT8 NumAccels){
+    UINT8 iTempCount;
+    //Now Initialise and calibrate each MMA8452
+    for(iTempCount = 1; iTempCount <= NumDevicesDetected; iTempCount++)
+    {
+        if((ucAddressArray[iTempCount] == 0x1C) || (ucAddressArray[iTempCount] == 0x1D)){
+        ucCurrentAddress = ucAddressArray[iTempCount];
+        initMMA8452Q(ucCurrentAddress);                                         //initialize the accelerometers
+        MMA8652FC_Calibration(ucDataArray, ucCurrentAddress);                   //calibrate the accelerometers
+        }
+        
+        NumAccels--;
+        if(NumAccels == 0){
+            break;
+        }
+    }
+}
 
 void MMA8652FC_Calibration (UINT8* ucDataArray_ref, UINT8 slave_adr_Copy)
 {
@@ -83,7 +101,7 @@ void MMA8452Q_SetMode(UINT8 slave_adr, int iMode) {
     else if(iMode == 1) // set to Active mode
         *TempData = 0x01;     //  0x39: ODR = 1.56hz, 0x19 = 100hz, 0x11 = 200hz, 0x09 = 400Hz,Active mode, 0x01 = 800Hz,Active mode; 
             
-    drvI2CWriteRegisters(CTRL_REG1, TempData, 1, slave_adr, &TempDeviceStatus);
+    drvI2CWriteRegisters(CTRL_REG1, TempData, 1, slave_adr, TempDeviceStatus);
 }
 
 void initMMA8452Q(UINT8 slave_adr) {

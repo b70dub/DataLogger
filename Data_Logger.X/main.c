@@ -211,8 +211,15 @@ void __ISR(_I2C_1_VECTOR, ipl3) _MasterI2CHandler(void)
 
             DataReady1 = 0;
             Accel1ReadStarted = 0;
-            IEC0bits.INT1IE=1;
-            IEC0bits.INT4IE=1; // re-enable external interrupt 4
+            
+            //Give the other accell priority for the next read (if it is ready)
+            //if(IFS0bits.INT4IF){
+                IEC0bits.INT4IE=1; // re-enable external interrupt 4
+            //}
+            //else{
+           //     IEC0bits.INT1IE=1;
+            //}
+            
 
             // 12-bit accelerometer data
           //  X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
@@ -236,8 +243,10 @@ void __ISR(_I2C_1_VECTOR, ipl3) _MasterI2CHandler(void)
 
             DataReady2 = 0;
             Accel2ReadStarted = 0;
+            
+            //Give the other accell priority for the next read
             IEC0bits.INT1IE=1; // re-enable external interrupt 1
-            IEC0bits.INT4IE=1;
+           // IEC0bits.INT4IE=1;
 
             // 12-bit accelerometer data
           //  X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
@@ -435,40 +444,27 @@ ConfigINT4(EXT_INT_PRI_6 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT4   
 SetSubPriorityINT4(EXT_INT_SUB_PRI_2);
 
 
+//Blink the LED on power-up
+Func_ShowImAlive();
+
+//Force the I2C slave to release the SDA line (sometimes the Slave will not release if the pic was reset during a transfer)
+Func_ForceSlaveToReleaseSDA();
+
+INTDisableInterrupts();
+//InitComplete = 0;
 
 drvI2CInit();
 
-
-INTDisableInterrupts();
-InitComplete = 0;
-
-
-//Blink the LED on power-up
-Func_ShowImAlive();
 
 //Scan the network for connected devices - if detected then allow trying to
 // read from them.
 //============================================================================//
 iDeviceCount = ScanNetwork(ucAddressArray);                         
 
-//ucAddressArray[0] = 0;
-//ucAddressArray[1] = 0x1d;
-//ucAddressArray[2] = 0;
-
-//iDeviceCount = 1;
-
 if(0 < iDeviceCount)                                                            //initialize the i2c network 
 {
-    //Now Initialise and calibrate each MMA8452
-    for(iTempCount = 1; iTempCount <=2; iTempCount++)
-    {
-        if((ucAddressArray[iTempCount] == 0x1C) || (ucAddressArray[iTempCount] == 0x1D)){
-        ucCurrentAddress = ucAddressArray[iTempCount];
-        initMMA8452Q(ucCurrentAddress);                                         //initialize the accelerometers
-        MMA8652FC_Calibration(ucDataArray, ucCurrentAddress);                   //calibrate the accelerometers
-        }
-    }
-    InitComplete = 1;
+    MMA8452_Setup(iDeviceCount, NumInstalledAccels);
+    
     INTEnableInterrupts();
 
 
@@ -488,55 +484,9 @@ if(0 < iDeviceCount)                                                            
     msLogTimer2.Setpt = 30000; //30 sec
     func_GetRemainingTime_ms(&msLogTimer2, mSec_CurrentCount);
 */ 
-        
-    
-    while(!msTestCycleTimer.TimerComplete)
-    {
-        /*
-        //Check if a read is in progress (initiated via interrupt)
-        //====================================================================//
-        if((DataReady1==1) && (Accel2ReadStarted == 0)){ //triggered by interrupt (DataReady1==1 : read not completed in isr so continue here)
-            Accel1ReadStarted = 1;
-            if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1, &Accel1Status))                // Read data output registers 0x01-0x06
-            {
-                //Reset the Data Ready flag
-                DataReady1 = 0;
-                Accel1ReadStarted = 0;
-            
-                // 12-bit accelerometer data
-             //   X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
-             //   Y1out_12_bit = ((short) (ucDataArray[2]<<8 | ucDataArray[3])) >> 4;                // Compute 12-bit Y-axis acceleration output value
-             //   Z1out_12_bit = ((short) (ucDataArray[4]<<8 | ucDataArray[5])) >> 4;                // Compute 12-bit Z-axis acceleration output value
-
-                // Accelerometer data converted to g's
-             //   X1out_g = ((float) X1out_12_bit) / SENSITIVITY_2G;                                 // Compute X-axis output value in g's
-             //   Y1out_g = ((float) Y1out_12_bit) / SENSITIVITY_2G;                                 // Compute Y-axis output value in g's
-             //   Z1out_g = ((float) Z1out_12_bit) / SENSITIVITY_2G;                                 // Compute Z-axis output value in g's
-            }
-        }
-        
-        if((DataReady2==1) && (Accel1ReadStarted == 0)){ //triggered by interrupt (DataReady1==1 : read not completed in isr so continue here)
-            Accel2ReadStarted = 1;
-            if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2, &Accel2Status))                // Read data output registers 0x01-0x06
-            {
-                //Reset the Data Ready flag
-                DataReady2 = 0;
-                Accel2ReadStarted = 0;
-            
-                // 12-bit accelerometer data
-             //   X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
-             //   Y1out_12_bit = ((short) (ucDataArray[2]<<8 | ucDataArray[3])) >> 4;                // Compute 12-bit Y-axis acceleration output value
-             //   Z1out_12_bit = ((short) (ucDataArray[4]<<8 | ucDataArray[5])) >> 4;                // Compute 12-bit Z-axis acceleration output value
-
-                // Accelerometer data converted to g's
-             //   X1out_g = ((float) X1out_12_bit) / SENSITIVITY_2G;                                 // Compute X-axis output value in g's
-             //   Y1out_g = ((float) Y1out_12_bit) / SENSITIVITY_2G;                                 // Compute Y-axis output value in g's
-             //   Z1out_g = ((float) Z1out_12_bit) / SENSITIVITY_2G;                                 // Compute Z-axis output value in g's
-            }
-        }
-        //Kickoff the device read process --> Once this happens then the Master I2C interrupt handler should finish the read 
-         * */
-    }
+    //Begin Main Loop    
+    while(!msTestCycleTimer.TimerComplete){}
+   
 }
 
 //Alert user card being initilized
