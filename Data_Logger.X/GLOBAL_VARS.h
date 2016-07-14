@@ -20,10 +20,10 @@ extern volatile UINT8 DataReady2; //Flags for accelerometer interrupts during cu
 extern volatile UINT8 Accel1ReadStarted; 
 extern volatile UINT8 Accel2ReadStarted;
 extern UINT8 InitComplete; 
+extern volatile BOOL I2CBusCollision;
 extern volatile UINT8 ucDataArray[10];
 extern volatile UINT8 Temp_INT_SOURCE_REG;
 extern volatile struct msTimer msTestCycleTimer, msLogTimer1, msLogTimer2;
-extern volatile struct I2C_DeviceStatuses Accel1Status, Accel2Status;
 
 
 #ifdef	__cplusplus

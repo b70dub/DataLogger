@@ -14,7 +14,6 @@ extern "C" {
 
 #include "pic32mx\include\xc.h"
 
-
  // Change below defines to I2C2xxx if using I2C2
 #define I2CCON        I2C1CON
 #define I2CCONbits    I2C1CONbits
@@ -30,39 +29,6 @@ extern "C" {
 
 #define I2C_DEBUG   0 // Change to 1 for debug messages
  
-/******************************************************************************
-*I2C - typedefs/structs
-******************************************************************************/
-typedef struct I2C_DeviceStatuses {
-    //drvI2CReadRegisters Vars
-    UINT8 StepNo;
-    UINT8 ReadTries;
-    UINT8 ByteCount;
-    UINT8 ByteReadStep;
-    UINT8 AddressChkStep;
-    UINT8 ReadModeStep;
-    
-    //I2C_SendByte Vars
-    UINT8 SendByteStepNo;
-    
-    //I2C_Stop Vars
-    UINT8 StopConditionStep;
-    UINT8 StopDelayCount;
-    
-    //I2C_Start Vars
-    UINT8 StartConditionStep;
-    
-    //Other Vars
-    BOOL Successful;
-    BOOL Error;
-    BOOL BusCollision;
-};
-
-typedef struct I2C_SendStatuses {
-    BOOL Successful;
-    BOOL Error;
-    UINT8 StepNo;
-};
 
 /******************************************************************************
 *I2C - functions
@@ -70,13 +36,13 @@ typedef struct I2C_SendStatuses {
 UINT8 ScanNetwork(UINT8* ucAddressArray_ref);
 BOOL get_ack_status(UINT8 address);
 static BOOL I2C_Idle(void);
-static BOOL I2C_Start(volatile struct I2C_DeviceStatuses* CurrentStatus);
-static BOOL I2C_Stop(void);
-static BOOL I2C_SendByte(BYTE data, volatile struct I2C_DeviceStatuses* CurrentStatus);
+static BOOL I2C_Start(void);
+void I2C_Stop(void);
+static BOOL I2C_SendByte(BYTE data);
 void drvI2CInit(void);
-BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slave_adr, volatile struct I2C_DeviceStatuses* CurrentStatus);//UINT8 slave_adr
-BOOL drvI2CWriteRegisters(UINT8 reg, UINT8* data, UINT8 len, UINT8 slave_adr, volatile struct I2C_DeviceStatuses* CurrentStatus);
-BOOL drvI2CWriteByte(UINT8 reg, UINT8 byte, UINT8 slave_adr, volatile struct I2C_DeviceStatuses* CurrentStatus );
+BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slave_adr);//UINT8 slave_adr
+BOOL drvI2CWriteRegisters(UINT8 reg, UINT8* data, UINT8 len, UINT8 slave_adr);
+BOOL drvI2CWriteByte(UINT8 reg, UINT8 byte, UINT8 slave_adr);
 
 
 #ifdef	__cplusplus

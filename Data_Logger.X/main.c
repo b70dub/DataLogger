@@ -109,7 +109,7 @@ void __ISR(_EXTERNAL_1_VECTOR,IPL7AUTO) INT1InterruptHandler(void){             
     //Kickoff the device read process --> Once this happens then the Master I2C interrupt handler should finish the read
     if(DataReady2 == 0){
         Accel1ReadStarted = 1;
-        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1, &Accel1Status)){                // Read data output registers 0x01-0x06
+        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1)){                // Read data output registers 0x01-0x06
             DataReady1 = 0;
             Accel1ReadStarted = 0;
             IEC0bits.INT4IE=1; // re-enable external interrupt 4
@@ -133,7 +133,7 @@ void __ISR(_EXTERNAL_4_VECTOR,IPL6AUTO) INT4InterruptHandler(void)           //A
     //Kickoff the device read process --> Once this happens then the Master I2C interrupt handler should finish the read
     if(DataReady1 == 0){
         Accel2ReadStarted = 1;
-        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2, &Accel2Status)){                // Read data output registers 0x01-0x06
+        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2)){                // Read data output registers 0x01-0x06
             DataReady2 = 0;
             Accel2ReadStarted = 0;
             IEC0bits.INT1IE=1; // re-enable external interrupt 1
@@ -204,7 +204,7 @@ void __ISR(_I2C_1_VECTOR, ipl3) _MasterI2CHandler(void)
     if((DataReady1 == 1) && (Accel2ReadStarted == 0)){
         Accel1ReadStarted = 1;
     //Finish the read process that is currently running
-        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1, &Accel1Status))                // Read data output registers 0x01-0x06
+        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1))                // Read data output registers 0x01-0x06
         {
             //Turn off the LED
             LATDbits.LATD1 = 0; 
@@ -236,7 +236,7 @@ void __ISR(_I2C_1_VECTOR, ipl3) _MasterI2CHandler(void)
     if((DataReady2 == 1) && (Accel1ReadStarted == 0)){
         Accel2ReadStarted = 1;
     //Finish the read process that is currently running
-        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2, &Accel2Status))                // Read data output registers 0x01-0x06
+        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2))                // Read data output registers 0x01-0x06
         {
             //Turn off the LED
             LATDbits.LATD1 = 0; 

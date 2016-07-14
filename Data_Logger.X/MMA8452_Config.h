@@ -107,7 +107,10 @@ float Xout_g, Yout_g, Zout_g;
 UINT8 ucAddressArray[3];
 UINT8 ucCurrentAddress;
 
+void MMA8652FC_Calibration (UINT8* ucDataArray_ref, UINT8 slave_adr_Copy);
+void MMA8452_Setup(UINT8 NumDevicesDetected, UINT8 NumAccels);
 void MMA8452Q_SetMode(UINT8 slave_adr, int iMode);
+void initMMA8452Q(UINT8 slave_adr);
 
 #ifdef	__cplusplus
 }
