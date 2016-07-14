@@ -35,8 +35,6 @@ extern "C" {
 ******************************************************************************/
 typedef struct I2C_DeviceStatuses {
     //drvI2CReadRegisters Vars
-    BOOL Successful;
-    BOOL Error;
     UINT8 StepNo;
     UINT8 ReadTries;
     UINT8 ByteCount;
@@ -54,6 +52,10 @@ typedef struct I2C_DeviceStatuses {
     //I2C_Start Vars
     UINT8 StartConditionStep;
     
+    //Other Vars
+    BOOL Successful;
+    BOOL Error;
+    BOOL BusCollision;
 };
 
 typedef struct I2C_SendStatuses {
@@ -69,7 +71,7 @@ UINT8 ScanNetwork(UINT8* ucAddressArray_ref);
 BOOL get_ack_status(UINT8 address);
 static BOOL I2C_Idle(void);
 static BOOL I2C_Start(volatile struct I2C_DeviceStatuses* CurrentStatus);
-static BOOL I2C_Stop(volatile struct I2C_DeviceStatuses* CurrentStatus);
+static BOOL I2C_Stop(void);
 static BOOL I2C_SendByte(BYTE data, volatile struct I2C_DeviceStatuses* CurrentStatus);
 void drvI2CInit(void);
 BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slave_adr, volatile struct I2C_DeviceStatuses* CurrentStatus);//UINT8 slave_adr
