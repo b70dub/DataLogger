@@ -37,7 +37,7 @@ UINT8 ScanNetwork(UINT8* ucAddressArray_ref);
 BOOL get_ack_status(UINT8 address);
 static BOOL I2C_Idle(void);
 static BOOL I2C_Start(void);
-void I2C_Stop(void);
+static BOOL I2C_Stop(void);
 static BOOL I2C_SendByte(BYTE data);
 void drvI2CInit(void);
 BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slave_adr);//UINT8 slave_adr

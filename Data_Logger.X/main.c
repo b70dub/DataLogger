@@ -335,15 +335,17 @@ DWORD get_fattime(void)
 {
    DWORD tmr;
 
-   INTDisableInterrupts();
+   IntStatus = INTDisableInterrupts();
+   
+   IEC0bits.INT1IE=0; 
    tmr =     (((DWORD)rtcYear - 80) << 25)
          | ((DWORD)rtcMon << 21)
          | ((DWORD)rtcMday << 16)
          | (WORD)(rtcHour << 11)
          | (WORD)(rtcMin << 5)
          | (WORD)(rtcSec >> 1);
-   INTEnableInterrupts();
-
+   //INTEnableInterrupts();                                                      
+    INTRestoreInterrupts(IntStatus);                                            // restore the interrupts to previous state
    return tmr;
 }
 
@@ -443,6 +445,11 @@ SetSubPriorityINT1(EXT_INT_SUB_PRI_3);
 ConfigINT4(EXT_INT_PRI_6 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT4             //future
 SetSubPriorityINT4(EXT_INT_SUB_PRI_2);
 
+//==============================================================================
+// Set up the I2C Master Event interrupt with priority level 
+//==============================================================================
+ // configure the interrupt priority for the I2C peripheral
+ mI2C1SetIntPriority(I2C_INT_PRI_3);                                            //ISR priority level should match!!!!
 
 //Blink the LED on power-up
 Func_ShowImAlive();
@@ -450,11 +457,14 @@ Func_ShowImAlive();
 //Force the I2C slave to release the SDA line (sometimes the Slave will not release if the pic was reset during a transfer)
 Func_ForceSlaveToReleaseSDA();
 
-INTDisableInterrupts();
 //InitComplete = 0;
 
-drvI2CInit();
+INTEnableInterrupts();
+IEC0bits.INT4IE=0; // disable external interrupt 4
 
+IntStatus = INTDisableInterrupts();
+
+drvI2CInit();
 
 //Scan the network for connected devices - if detected then allow trying to
 // read from them.
@@ -465,25 +475,15 @@ if(0 < iDeviceCount)                                                            
 {
     MMA8452_Setup(iDeviceCount, NumInstalledAccels);
     
-    INTEnableInterrupts();
+  //  INTEnableInterrupts();
 
-
+    INTRestoreInterrupts(IntStatus);                                            // restore the interrupts to previous state
+    
     //Timer for test run time
     msTestCycleTimer.StartTime = mSec_CurrentCount;                                            //Main cycle timer
     msTestCycleTimer.Setpt = 3600000; // 1 hour
     func_GetRemainingTime_ms(&msTestCycleTimer, mSec_CurrentCount);
 
-/*
-    //Timer for logging reads on accel 1
-    msLogTimer1.StartTime = mSec_CurrentCount;                
-    msLogTimer1.Setpt = 30000;  //30 sec
-    func_GetRemainingTime_ms(&msLogTimer1, mSec_CurrentCount);
-
-    //Timer for logging reads on accel 2
-    msLogTimer2.StartTime = mSec_CurrentCount;
-    msLogTimer2.Setpt = 30000; //30 sec
-    func_GetRemainingTime_ms(&msLogTimer2, mSec_CurrentCount);
-*/ 
     //Begin Main Loop    
     while(!msTestCycleTimer.TimerComplete){}
    
@@ -496,7 +496,7 @@ delay_ms (50);
 //Initialize Disk
 disk_initialize(0);
 
-//Aert user SD card is being mounted
+//Alert user SD card is being mounted
 //printf ((const char *)"Mount SDCARD \r\n");
 delay_ms(50);
 

@@ -2,10 +2,9 @@
 //
 //  Generic i2c driver
 //
-//  Original Author: Govind Mukundan Previously only supported up to 100 hz via polling
-//  Modified by: Brian Ankeny
-//  -Modified heavily and changed to remove blocking code from read function. Is now state machine based
-//  -Now supports up to 800 hz 
+//  Author: Brian Ankeny
+//  -state machine based
+//  -supports up to 800 hz (max ODR of MMA8452)
 //  
 //  ********************************* HISTORY ********************************
 //
@@ -61,11 +60,7 @@ I2CCONbits.I2CSIDL = 1; // dont operate in idle mode
 I2CCONbits.I2CEN = 1; // enable module
 temp = I2CRCV; // clear RBF flag
     
-//==============================================================================
-// Set up the I2C Master Event interrupt with priority level 
-//==============================================================================
- // configure the interrupt priority for the I2C peripheral
- mI2C1SetIntPriority(I2C_INT_PRI_3);                                            //ISR priority level should match!!!!
+
  
  // clear pending interrupts and enable I2C interrupts for the master
  mI2C1MClearIntFlag();
@@ -86,27 +81,12 @@ BOOL get_ack_status(UINT8 address){
     int iTempCount, iAckReceived = 0, iTestbit;
 
     //Check for module stopped status
-    if(I2CSTATbits.P != 1){
-       I2C_Stop();
-       
-        while(I2CSTATbits.P != 1){
-            if ((I2CSTATbits.BCL == 1)) {
-                I2CSTATbits.BCL = 0;
-                I2C_Stop();
-            }
-        } 
-    }
+    while(!I2C_Stop()){}
          
     for (iTempCount = 0; iTempCount < 100; iTempCount++) // wait for ACK for some time
     {
         //Stop the module if needed
-        if(I2CSTATbits.P != 1){
-            I2C_Stop();
-       
-            while(I2CSTATbits.P != 1){
-                I2C_Stop();
-            }
-        }
+        while(!I2C_Stop()){}
         
         //1. i2c start
         while(!I2C_Start()){}
@@ -126,9 +106,7 @@ BOOL get_ack_status(UINT8 address){
     }
 
     //4. Send the Stop 
-    I2C_Stop();
-    
-    while(I2CSTATbits.P != 1){}
+    while(!I2C_Stop()){}
 
     if(iAckReceived == 1)
        return(TRUE);
@@ -152,7 +130,6 @@ void Func_ForceSlaveToReleaseSDA(void){
 UINT8 ScanNetwork(UINT8* ucAddressArray_ref) {
     UINT16 temp = 0;
     UINT8 address;
-    UINT8 status;
     UINT8 count = 0;
 
     int iTestbit = 0;
@@ -222,24 +199,24 @@ static BOOL I2C_Start(void) {                                                   
          // Check for collisions
         //If a bus collision occurred then clear the bus collision bit
         if(I2CSTATbits.BCL == 1){
-           
             //Initiate a stop request (IF NOT PENDING)
-            if(I2CSTATbits.P != 1){
-                if(I2CCONbits.PEN != 1){
-                    I2C_Stop();
-                }
-            }
-            else{
-                I2CSTATbits.BCL = 0;
+            if(I2C_Stop()){
                 //Reset the start step
                 StartConditionStep = 1;
+            } else {
+                I2CSTATbits.BCL = 1;
             }
-       
             return FALSE;
         }
         else if(I2CSTATbits.S == 1) {
-            StartConditionStep = 1;
-            return TRUE;
+            if(I2C_Idle()){
+                StartConditionStep = 1;
+                return TRUE;
+            }
+            else{
+                return FALSE;
+            }
+                
         } else {                                                                //Unknown error occured
             //Initiate a stop request
             I2C_Stop();
@@ -251,9 +228,21 @@ static BOOL I2C_Start(void) {                                                   
     }  
 }
 
-void I2C_Stop(void) {                                                     //- Supporting Function
-    //initiate stop bit
-    I2CCONbits.PEN = 1;    
+static BOOL I2C_Stop(void) {                                                     //- Supporting Function
+    if(I2CSTATbits.P != 1){
+        //Check for bus collision
+        if ((I2CSTATbits.BCL == 1)) {
+            I2CSTATbits.BCL = 0;
+        }
+        
+        //initiate stop bit
+        if(I2CCONbits.PEN != 1){
+            I2CCONbits.PEN = 1; 
+        }
+        return FALSE;         
+    } else {
+        return TRUE;
+    }  
 }
     
 /* Initial call to this function should be preceded by a call to I2C_Start()*/    
@@ -597,40 +586,44 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
             {
                 
             case 1 : //Step 1: //Wait for Bus idle
-                I2CCONbits.RCEN = 1;                                        // enable master read
-                ByteReadStep = 2;
+                
+                //Check for bus in idle state
+                if (I2C_Idle()) {
+                    I2CCONbits.RCEN = 1;                                        // enable master read
+                    ByteReadStep = 2;
 
-                if(!I2CCONbits.RCEN){                                       // wait for byte to be received !(I2CSTATbits.RBF) --rcen automatically clears when recvd
-                    ByteReadStep = 3;
+                    if(!I2CCONbits.RCEN){                                       // wait for byte to be received !(I2CSTATbits.RBF) --rcen automatically clears when recvd
+                        ByteReadStep = 3;
 
-                    I2CSTATbits.I2COV = 0;                                      //Reset bit incase data came before we extracted the last set of data
-                    *(rxPtr + ByteCount) = I2CRCV;
+                        I2CSTATbits.I2COV = 0;                                      //Reset bit incase data came before we extracted the last set of data
+                        *(rxPtr + ByteCount) = I2CRCV;
 
-                    if ((ByteCount + 1) == len) {
+                        if ((ByteCount + 1) == len) {
 
-                        //9. Generate a NACK on last byte
-                        I2CCONbits.ACKDT = 1; // send nack
-                        I2CCONbits.ACKEN = 1;
+                            //9. Generate a NACK on last byte
+                            I2CCONbits.ACKDT = 1; // send nack
+                            I2CCONbits.ACKEN = 1;
 
-                        ByteReadStep = 4;
+                            ByteReadStep = 4;
 
-                        //10. generate a stop
-                        if (I2CSTATbits.P != 1){
-                            I2C_Stop();
+                            //10. generate a stop
+                            if(I2C_Stop()) {
+                                ByteCount++;
+                            } 
+                            return FALSE; 
+
                         } else {
-                            ByteCount++;
-                        } 
-                        return FALSE; 
+                            I2CCONbits.ACKDT = 0; // send ACK for sequential reads
+                            I2CCONbits.ACKEN = 1;
 
+                             ByteCount++;
+                             ByteReadStep = 1;
+                        }
+                        return FALSE;
                     } else {
-                        I2CCONbits.ACKDT = 0; // send ACK for sequential reads
-                        I2CCONbits.ACKEN = 1;
-
-                         ByteCount++;
-                         ByteReadStep = 1;
+                        return FALSE;
                     }
-                    return FALSE;
-                } else {
+                } else{
                     return FALSE;
                 }
                 
@@ -650,10 +643,7 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                         ByteReadStep = 3;
 
                         //10. generate a stop
-                        if (I2CSTATbits.P != 1){
-                            I2C_Stop();
-                        } else {
-
+                        if(I2C_Stop()) {
                             StepNo = 0;
                             return TRUE;
                         }
@@ -675,17 +665,21 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
             case 3 : //Step 3: Send stop bit
                 
                 //10. generate a stop (if not idle)
-                if (I2CSTATbits.P != 1){
-                    I2C_Stop();
-                } else {
+                if(I2C_Stop()) {
                     StepNo = 0;
                     return TRUE;                                                //Success    
                 }
                 return FALSE;                   
             }
         }
-        StepNo = 0;
-        return TRUE;                                                            //Success                                   
+        
+        if(I2C_Stop()) {
+            StepNo = 0;
+            return TRUE;                                                            //Success      
+        }
+        else {
+            return FALSE;
+        }
     }
 }
 
@@ -709,13 +703,7 @@ BOOL drvI2CWriteRegisters(UINT8 adr, UINT8* data, UINT8 len, UINT8 slave_adr_Cop
     for (i = 0; i < 100; i++) {
         
         //Stop the module if needed
-        if(I2CSTATbits.P != 1){
-            I2C_Stop();
-       
-            while(I2CSTATbits.P != 1){
-                I2C_Stop();
-            }
-        }
+        while(!I2C_Stop()) {}
         
         //1. i2c start
         while(!I2C_Start()){}
@@ -724,9 +712,13 @@ BOOL drvI2CWriteRegisters(UINT8 adr, UINT8* data, UINT8 len, UINT8 slave_adr_Cop
         while(!I2C_SendByte( (slave_adr_Copy << 1) | 0)){
             //Redo the start if bus collision detected
             if(I2CBusCollision == TRUE){
-                I2CBusCollision = FALSE;
+               
+                //Stop the module if needed
+                while(!I2C_Stop()) {}
                 
-                while(!I2C_Start()){ }   
+                //Reissue the START
+                while(!I2C_Start()){ } 
+                I2CBusCollision = FALSE;
             }
         
         }  //select device by address and set to write mode
@@ -737,9 +729,6 @@ BOOL drvI2CWriteRegisters(UINT8 adr, UINT8* data, UINT8 len, UINT8 slave_adr_Cop
             flag = 1;
             break;
         }
-#if(I2C_DEBUG == 1)
-        UART2PutChar('.');
-#endif
     }
 
     if (!flag) return (FALSE); // Exit if there was a problem
@@ -754,16 +743,12 @@ BOOL drvI2CWriteRegisters(UINT8 adr, UINT8* data, UINT8 len, UINT8 slave_adr_Cop
         {
             while(!I2C_SendByte(*(data + j))){}
         } else {
-#if(I2C_DEBUG == 1)
-            UART2PrintString("Error NACK Rxed\n");
-#endif
             return FALSE;
         }
     }
     
-    I2C_Stop();
-    
-    while(I2CSTATbits.P != 1){}
+    //Issue a stop
+    while(!I2C_Stop()){}
 
     return TRUE;
 

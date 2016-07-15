@@ -14,6 +14,8 @@
 #ifdef	__cplusplus
 extern "C" {
 #endif
+
+extern UINT IntStatus;
 extern UINT8 NumInstalledAccels; //Number of accelerometers installed
 extern volatile UINT8 DataReady1; //Flags for accelerometer interrupts during current reads (so we dont loose the interrupt)
 extern volatile UINT8 DataReady2; //Flags for accelerometer interrupts during current reads (so we dont loose the interrupt)
