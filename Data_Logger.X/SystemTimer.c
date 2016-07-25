@@ -110,7 +110,7 @@ void func_GetRemainingTime_rtc(struct rtcTimer* ThisTimer, struct rtcTimeStamp* 
 }
 */
 
-//This funtion will return how much time (in milliseconds) has passed for a given setpoint and start time
+//This function will return how much time (in milliseconds) has passed for a given setpoint and start time
 void func_GetRemainingTime_ms(struct msTimer* ThisTimer, int CurrentCount){
     
 

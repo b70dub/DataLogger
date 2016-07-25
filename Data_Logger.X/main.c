@@ -96,23 +96,36 @@ FIL file1, file2;      /* File objects */
 
 
 /* Interrupt service routine of external int 1    */
-void __ISR(_EXTERNAL_1_VECTOR,IPL7AUTO) INT1InterruptHandler(void){             //Acellerometer 1 : Data Ready
+void __ISR(_EXTERNAL_1_VECTOR,IPL3AUTO) INT1InterruptHandler(void){             //Acellerometer 1 : Data Ready
     
-    IEC0bits.INT4IE=0; // disable external interrupt 4
+    IEC0bits.INT1IE=0;                                                          // disable external interrupt 
+    INTClearFlag(INT_INT1);                                                     // Clear the interrupt flag
+    IntStatus = INTDisableInterrupts();                                         // Store the current interrupt status 
     
-    INTClearFlag(INT_INT1);                                                     //Clear the interrupt flag
-    DataReady1 = 1;
+    //===================================                                       //Begin debug logic
+    if(InterruptCount == 70)
+        InterruptCount = InterruptCount;
+    
+    if(DataReady2 == 1)
+        InterruptCount = InterruptCount;
+    //===================================                                       //End debug logic
+    
+    DataReady1 = 1;                                                             //Global var to store which interrupt was last detected
     
     //Turn on the LED
-    LATDbits.LATD1 = 1; 
+    LATDbits.LATD1 = 1;                                                         //Visual indication of read status 
         
     //Kickoff the device read process --> Once this happens then the Master I2C interrupt handler should finish the read
     if(DataReady2 == 0){
         Accel1ReadStarted = 1;
-        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1)){                // Read data output registers 0x01-0x06
+        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1)){  // Read data output registers 0x01-0x06
             DataReady1 = 0;
             Accel1ReadStarted = 0;
-            IEC0bits.INT4IE=1; // re-enable external interrupt 4
+            
+            //Give the other accell priority for the next read
+            IEC0bits.INT4IE = 1; // re-enable external interrupt 4
+
+            return;
         }
     }
 } 
@@ -121,22 +134,38 @@ void __ISR(_EXTERNAL_1_VECTOR,IPL7AUTO) INT1InterruptHandler(void){             
 
 /* Interrupt service routine of external int 4    */
 
-void __ISR(_EXTERNAL_4_VECTOR,IPL6AUTO) INT4InterruptHandler(void)           //Acellerometer 2 : Data Ready
+void __ISR(_EXTERNAL_4_VECTOR,IPL2AUTO) INT4InterruptHandler(void)              //Acellerometer 2 : Data Ready
 { 
-    IEC0bits.INT1IE=0; // disable external interrupt 1
-    INTClearFlag(INT_INT4);                                                     //Clear the interrupt flag
-    DataReady2 = 1;
+    IEC0bits.INT4IE=0;                                                          // disable external interrupt 
+    INTClearFlag(INT_INT4);                                                     // Clear the interrupt flag
+    IntStatus = INTDisableInterrupts();                                         // Store the current interrupt status 
+    
+    //===================================                                       //Begin debug logic
+    InterruptCount++;
+    
+    if(InterruptCount == 70)
+        InterruptCount = InterruptCount;
+            
+    if(DataReady1 == 1)
+        InterruptCount = InterruptCount;
+    //===================================                                       //End debug logic
+    
+    DataReady2 = 1;                                                             //Global var to store which interrupt was last detected
 
     //Turn on the LED
-    LATDbits.LATD1 = 1; 
+    LATDbits.LATD1 = 1;                                                         //Visual indication of read status
  
     //Kickoff the device read process --> Once this happens then the Master I2C interrupt handler should finish the read
     if(DataReady1 == 0){
         Accel2ReadStarted = 1;
-        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2)){                // Read data output registers 0x01-0x06
+        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2)){ // Read data output registers 0x01-0x06
             DataReady2 = 0;
             Accel2ReadStarted = 0;
-            IEC0bits.INT1IE=1; // re-enable external interrupt 1
+            
+            //Give the other accell priority for the next read
+            IEC0bits.INT1IE = 1; // re-enable external interrupt 1
+            
+            return;
         }
     }
 }
@@ -178,43 +207,62 @@ Bus Collision events that generate an interrupt are:
  */
 
 ///////////////////////////////////////////////////////////////////
-void __ISR(_I2C_1_VECTOR, ipl3) _MasterI2CHandler(void)
+void __ISR(_I2C_1_VECTOR, IPL4AUTO) _MasterI2CHandler(void)
 {
-    IEC0bits.INT1IE=0;
-    IEC0bits.INT4IE=0;
      // check for Slave and Bus events and return as we are not handling these
     if (IFS0bits.I2C1SIF == 1) {
-     mI2C1SClearIntFlag();
-     return;  
+        mI2C1SClearIntFlag();
+        return;  
     }
     
      if (IFS0bits.I2C1MIF == 1) {
-     mI2C1MClearIntFlag();
+        mI2C1MClearIntFlag();                                                   // Clear the master interrupt flag if it is set
     }
     
     //May want to use this later to reset the current i2c operation
     if (IFS0bits.I2C1BIF == 1) {
-     mI2C1BClearIntFlag();
+        mI2C1BClearIntFlag();                                                   // Clear the bus fault interrupt flag if it is set
     }
     
     if((DataReady1 == 0) && (DataReady2 == 0)){
-        return;
+        return;                                                                 // Return if no interrupt was previously detected
     }
        
+    //===================================                                       //Begin debug logic
+    if((DataReady1 == 1) && (DataReady2 == 1))
+        InterruptCount = InterruptCount;
+    //===================================                                       //End debug logic
+    
+    
+    /***************************************************************************
+     *                              Accel #1 read logic
+     * ************************************************************************/
+    
     if((DataReady1 == 1) && (Accel2ReadStarted == 0)){
-        Accel1ReadStarted = 1;
-    //Finish the read process that is currently running
+        Accel1ReadStarted = 1;                                                  //Global var to store which read is currently in progress
+        
+        //Finish the read process that is currently running
         if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1))                // Read data output registers 0x01-0x06
         {
+            //===================================                               //Begin debug logic
+            if(InterruptCount == 70)
+                    InterruptCount = InterruptCount;
+            //===================================                               //End debug logic
+            
             //Turn off the LED
-            LATDbits.LATD1 = 0; 
+            LATDbits.LATD1 = 0;                                                 //Clear visual indication to signal that read is complete
 
-            DataReady1 = 0;
-            Accel1ReadStarted = 0;
+            DataReady1 = 0;                                                     // Reset var status
+            Accel1ReadStarted = 0;                                              // Reset var status
+            
+            INTRestoreInterrupts(IntStatus);                                    // restore the interrupts to previous state
             
             //Give the other accell priority for the next read (if it is ready)
-            //if(IFS0bits.INT4IF){
-                IEC0bits.INT4IE=1; // re-enable external interrupt 4
+            IEC0bits.INT4IE = 1;                                                // re-enable external interrupt 4
+
+            return;
+                
+                
             //}
             //else{
            //     IEC0bits.INT1IE=1;
@@ -233,19 +281,35 @@ void __ISR(_I2C_1_VECTOR, ipl3) _MasterI2CHandler(void)
 
         }
     }
-    if((DataReady2 == 1) && (Accel1ReadStarted == 0)){
-        Accel2ReadStarted = 1;
-    //Finish the read process that is currently running
-        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2))                // Read data output registers 0x01-0x06
+    
+    
+    /***************************************************************************
+     *                              Accel #2 read logic
+     * ************************************************************************/
+    else if((DataReady2 == 1) && (Accel1ReadStarted == 0)){
+        
+        Accel2ReadStarted = 1;                                                  //Global var to store which read is currently in progress
+    
+        //Finish the read process that is currently running
+        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2)) // Read data output registers 0x01-0x06
         {
+            //===================================                               //Begin debug logic
+            if(InterruptCount == 70)
+                    InterruptCount = InterruptCount;
+            //===================================                               //End debug logic
+            
             //Turn off the LED
-            LATDbits.LATD1 = 0; 
+            LATDbits.LATD1 = 0;                                                 //Clear visual indication to signal that read is complete
 
-            DataReady2 = 0;
-            Accel2ReadStarted = 0;
+            DataReady2 = 0;                                                     // Reset var status
+            Accel2ReadStarted = 0;                                              // Reset var status
+            
+            INTRestoreInterrupts(IntStatus);                                    // restore the interrupts to previous state
             
             //Give the other accell priority for the next read
-            IEC0bits.INT1IE=1; // re-enable external interrupt 1
+            IEC0bits.INT1IE = 1;                                                // re-enable external interrupt 1
+            
+            return;
            // IEC0bits.INT4IE=1;
 
             // 12-bit accelerometer data
@@ -260,6 +324,7 @@ void __ISR(_I2C_1_VECTOR, ipl3) _MasterI2CHandler(void)
 
         }
     }
+    
 }
 
 
@@ -274,8 +339,9 @@ void __ISR(_I2C_1_VECTOR, ipl3) _MasterI2CHandler(void)
  *               with low level function timing
  * Note:            Initial Microchip version adapted to work into ISR routine
  *****************************************************************************/
-void __ISR(_CORE_TIMER_VECTOR, IPL2SOFT) CoreTimerHandler(void)
+void __ISR(_CORE_TIMER_VECTOR, IPL1SOFT) CoreTimerHandler(void)
 {
+   
    static const BYTE dom[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
    BYTE n;
@@ -286,7 +352,7 @@ void __ISR(_CORE_TIMER_VECTOR, IPL2SOFT) CoreTimerHandler(void)
     UpdateCoreTimer(CORE_TICK_RATE);
 
    disk_timerproc();   // call the low level disk IO timer functions
-   tick++;            // increment the benchmarking timer
+ //  tick++;            // increment the benchmarking timer
 
    if (++mSec_CurrentCount >= 86400030) //Allow up to 24 hours worth of timing
         mSec_CurrentCount = 0;
@@ -317,6 +383,7 @@ void __ISR(_CORE_TIMER_VECTOR, IPL2SOFT) CoreTimerHandler(void)
    func_GetRemainingTime_ms(&msTestCycleTimer, mSec_CurrentCount);              // Update the test cycle timer
 // func_GetRemainingTime_ms(&msLogTimer1, mSec_CurrentCount);
 // func_GetRemainingTime_ms(&msLogTimer2, mSec_CurrentCount);
+  
 }
 
 /*********************************************************************
@@ -337,14 +404,13 @@ DWORD get_fattime(void)
 
    IntStatus = INTDisableInterrupts();
    
-   IEC0bits.INT1IE=0; 
    tmr =     (((DWORD)rtcYear - 80) << 25)
          | ((DWORD)rtcMon << 21)
          | ((DWORD)rtcMday << 16)
          | (WORD)(rtcHour << 11)
          | (WORD)(rtcMin << 5)
          | (WORD)(rtcSec >> 1);
-   //INTEnableInterrupts();                                                      
+   
     INTRestoreInterrupts(IntStatus);                                            // restore the interrupts to previous state
    return tmr;
 }
@@ -435,21 +501,21 @@ LATFbits.LATF1 = 0;
 /******************************************************************************/
 
 // set up the core timer interrupt with a priority of 2 and zero sub-priority
-mConfigIntCoreTimer((CT_INT_ON | CT_INT_PRIOR_2 | CT_INT_SUB_PRIOR_0));
+mConfigIntCoreTimer((CT_INT_ON | CT_INT_PRIOR_1 | CT_INT_SUB_PRIOR_0));
 
    //Setup interrupts
  //removed temporarily
-ConfigINT1(EXT_INT_PRI_7 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT1              //Acellerometer 1 : Data Ready (External interrupt)
+ConfigINT1(EXT_INT_PRI_3 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT1              //Acellerometer 1 : Data Ready (External interrupt)
 SetSubPriorityINT1(EXT_INT_SUB_PRI_3);
 
-ConfigINT4(EXT_INT_PRI_6 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT4             //future
+ConfigINT4(EXT_INT_PRI_2 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT4             //future
 SetSubPriorityINT4(EXT_INT_SUB_PRI_2);
 
 //==============================================================================
 // Set up the I2C Master Event interrupt with priority level 
 //==============================================================================
  // configure the interrupt priority for the I2C peripheral
- mI2C1SetIntPriority(I2C_INT_PRI_3);                                            //ISR priority level should match!!!!
+ mI2C1SetIntPriority(I2C_INT_PRI_4);                                            //ISR priority level should match!!!!
 
 //Blink the LED on power-up
 Func_ShowImAlive();
@@ -459,6 +525,8 @@ Func_ForceSlaveToReleaseSDA();
 
 //InitComplete = 0;
 
+INTClearFlag(INT_INT4); 
+INTClearFlag(INT_INT1); 
 INTEnableInterrupts();
 IEC0bits.INT4IE=0; // disable external interrupt 4
 
@@ -485,7 +553,22 @@ if(0 < iDeviceCount)                                                            
     func_GetRemainingTime_ms(&msTestCycleTimer, mSec_CurrentCount);
 
     //Begin Main Loop    
-    while(!msTestCycleTimer.TimerComplete){}
+    while(!msTestCycleTimer.TimerComplete){
+        /*
+        //Prevent an interrupt deadlock
+        if( ((IFS0bits.INT1IF == 0) && (IEC0bits.INT1IE == 1)) ||
+                ((IFS0bits.INT4IF == 0) && (IEC0bits.INT4IE == 1)) ){
+            
+            if((IEC0bits.INT1IE = 1)){
+                IEC0bits.INT1IE = 0; 
+                IEC0bits.INT4IE = 1;    // re-enable external interrupt 4
+            }
+            else
+                IEC0bits.INT4IE = 0; 
+                IEC0bits.INT1IE = 1;    // re-enable external interrupt 1
+        }
+         * */
+    }
    
 }
 
@@ -496,7 +579,7 @@ delay_ms (50);
 //Initialize Disk
 disk_initialize(0);
 
-//Alert user SD card is being mounted
+//Aert user SD card is being mounted
 //printf ((const char *)"Mount SDCARD \r\n");
 delay_ms(50);
 
