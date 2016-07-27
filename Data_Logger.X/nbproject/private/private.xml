@@ -1,19 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/1"/>
-    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="19">
+        <file>
+            <url>I2C_HardwareDrvr.c</url>
+            <bookmark id="19">
+                <name/>
+                <line>589</line>
+                <key/>
+            </bookmark>
+        </file>
+    </editor-bookmarks>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/pic32mx/include/peripheral/legacy/i2c_legacy.h</file>
-            <file>file:/C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/GLOBAL_VARS.c</file>
             <file>file:/C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/main.c</file>
-            <file>file:/C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/GLOBAL_VARS.h</file>
-            <file>file:/C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/I2C_HardwareDrvr.h</file>
-            <file>file:/C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/MMA8452_I2C.c</file>
-            <file>file:/C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/SystemTimer.c</file>
             <file>file:/C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/pic32mx/include/peripheral/int.h</file>
             <file>file:/C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/I2C_HardwareDrvr.c</file>
-            <file>file:/C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/pic32mx/include/peripheral/legacy/int_3xx_4xx_legacy.h</file>
+            <file>file:/C:/Git_SourceTree_Repos/CanDataLogger/Data_Logger.X/pic32mx/include/peripheral/int_3xx_4xx.h</file>
         </group>
     </open-files>
 </project-private>

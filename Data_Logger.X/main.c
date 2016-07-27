@@ -97,37 +97,37 @@ FIL file1, file2;      /* File objects */
 
 /* Interrupt service routine of external int 1    */
 void __ISR(_EXTERNAL_1_VECTOR,IPL3AUTO) INT1InterruptHandler(void){             //Acellerometer 1 : Data Ready
-    
-    IEC0bits.INT1IE=0;                                                          // disable external interrupt 
     INTClearFlag(INT_INT1);                                                     // Clear the interrupt flag
-    IntStatus = INTDisableInterrupts();                                         // Store the current interrupt status 
-    
+    INTEnable(INT_I2C1B, INT_DISABLED);                                         // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED     
+    INTEnable(INT_I2C1M, INT_DISABLED);                                         // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+    INTEnable(INT_INT1, INT_DISABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+   
     //===================================                                       //Begin debug logic
-    if(InterruptCount == 70)
+    if(InterruptCount == 75)
         InterruptCount = InterruptCount;
     
-    if(DataReady2 == 1)
+    if(DataReady == 2)
         InterruptCount = InterruptCount;
     //===================================                                       //End debug logic
     
-    DataReady1 = 1;                                                             //Global var to store which interrupt was last detected
-    
+    DataReady = 1;                                                             //Global var to store which interrupt was last detected
+    Accel1ReadStarted = 1;
+
     //Turn on the LED
     LATDbits.LATD1 = 1;                                                         //Visual indication of read status 
-        
-    //Kickoff the device read process --> Once this happens then the Master I2C interrupt handler should finish the read
-    if(DataReady2 == 0){
-        Accel1ReadStarted = 1;
-        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1)){  // Read data output registers 0x01-0x06
-            DataReady1 = 0;
-            Accel1ReadStarted = 0;
-            
-            //Give the other accell priority for the next read
-            IEC0bits.INT4IE = 1; // re-enable external interrupt 4
 
-            return;
-        }
+    //Kickoff the device read process --> Once this happens then the Master I2C interrupt handler should finish the read
+    if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1)){  // Read data output registers 0x01-0x06
+        DataReady = 0;
+        Accel1ReadStarted = 0;
+
+        //Give the other accell priority for the next read
+        //IEC0bits.INT4IE = 1; // re-enable external interrupt 4
+        INTEnable(INT_INT4, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
     }
+   
+    INTEnable(INT_I2C1B, INT_ENABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+    INTEnable(INT_I2C1M, INT_ENABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
 } 
 
 
@@ -136,38 +136,38 @@ void __ISR(_EXTERNAL_1_VECTOR,IPL3AUTO) INT1InterruptHandler(void){             
 
 void __ISR(_EXTERNAL_4_VECTOR,IPL2AUTO) INT4InterruptHandler(void)              //Acellerometer 2 : Data Ready
 { 
-    IEC0bits.INT4IE=0;                                                          // disable external interrupt 
     INTClearFlag(INT_INT4);                                                     // Clear the interrupt flag
-    IntStatus = INTDisableInterrupts();                                         // Store the current interrupt status 
-    
+    INTEnable(INT_I2C1B, INT_DISABLED);                                         // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+    INTEnable(INT_I2C1M, INT_DISABLED);                                         // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+    INTEnable(INT_INT4, INT_DISABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
     //===================================                                       //Begin debug logic
     InterruptCount++;
     
-    if(InterruptCount == 70)
+    if(InterruptCount == 75)
         InterruptCount = InterruptCount;
             
-    if(DataReady1 == 1)
+    if(DataReady == 1)
         InterruptCount = InterruptCount;
     //===================================                                       //End debug logic
     
-    DataReady2 = 1;                                                             //Global var to store which interrupt was last detected
-
+    DataReady = 2;                                                             //Global var to store which interrupt was last detected
+    Accel2ReadStarted = 1;
+    
     //Turn on the LED
     LATDbits.LATD1 = 1;                                                         //Visual indication of read status
- 
+
     //Kickoff the device read process --> Once this happens then the Master I2C interrupt handler should finish the read
-    if(DataReady1 == 0){
-        Accel2ReadStarted = 1;
-        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2)){ // Read data output registers 0x01-0x06
-            DataReady2 = 0;
-            Accel2ReadStarted = 0;
-            
-            //Give the other accell priority for the next read
-            IEC0bits.INT1IE = 1; // re-enable external interrupt 1
-            
-            return;
-        }
+    if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2)){ // Read data output registers 0x01-0x06
+        DataReady = 0;
+        Accel2ReadStarted = 0;
+
+        //Give the other accell priority for the next read
+//            IEC0bits.INT1IE = 1; // re-enable external interrupt 1
+        INTEnable(INT_INT1, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
     }
+   
+    INTEnable(INT_I2C1B, INT_ENABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+    INTEnable(INT_I2C1M, INT_ENABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
 }
 
 
@@ -211,118 +211,122 @@ void __ISR(_I2C_1_VECTOR, IPL4AUTO) _MasterI2CHandler(void)
 {
      // check for Slave and Bus events and return as we are not handling these
     if (IFS0bits.I2C1SIF == 1) {
-        mI2C1SClearIntFlag();
-        return;  
+        mI2C1SClearIntFlag(); 
     }
+    else{
     
-     if (IFS0bits.I2C1MIF == 1) {
-        mI2C1MClearIntFlag();                                                   // Clear the master interrupt flag if it is set
-    }
-    
-    //May want to use this later to reset the current i2c operation
-    if (IFS0bits.I2C1BIF == 1) {
-        mI2C1BClearIntFlag();                                                   // Clear the bus fault interrupt flag if it is set
-    }
-    
-    if((DataReady1 == 0) && (DataReady2 == 0)){
-        return;                                                                 // Return if no interrupt was previously detected
-    }
-       
-    //===================================                                       //Begin debug logic
-    if((DataReady1 == 1) && (DataReady2 == 1))
-        InterruptCount = InterruptCount;
-    //===================================                                       //End debug logic
-    
-    
-    /***************************************************************************
-     *                              Accel #1 read logic
-     * ************************************************************************/
-    
-    if((DataReady1 == 1) && (Accel2ReadStarted == 0)){
-        Accel1ReadStarted = 1;                                                  //Global var to store which read is currently in progress
-        
-        //Finish the read process that is currently running
-        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1))                // Read data output registers 0x01-0x06
-        {
-            //===================================                               //Begin debug logic
-            if(InterruptCount == 70)
-                    InterruptCount = InterruptCount;
-            //===================================                               //End debug logic
-            
-            //Turn off the LED
-            LATDbits.LATD1 = 0;                                                 //Clear visual indication to signal that read is complete
-
-            DataReady1 = 0;                                                     // Reset var status
-            Accel1ReadStarted = 0;                                              // Reset var status
-            
-            INTRestoreInterrupts(IntStatus);                                    // restore the interrupts to previous state
-            
-            //Give the other accell priority for the next read (if it is ready)
-            IEC0bits.INT4IE = 1;                                                // re-enable external interrupt 4
-
-            return;
-                
-                
-            //}
-            //else{
-           //     IEC0bits.INT1IE=1;
-            //}
-            
-
-            // 12-bit accelerometer data
-          //  X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
-           // Y1out_12_bit = ((short) (ucDataArray[2]<<8 | ucDataArray[3])) >> 4;                // Compute 12-bit Y-axis acceleration output value
-           // Z1out_12_bit = ((short) (ucDataArray[4]<<8 | ucDataArray[5])) >> 4;                // Compute 12-bit Z-axis acceleration output value
-
-            // Accelerometer data converted to g's
-          //  X1out_g = ((float) X1out_12_bit) / SENSITIVITY_2G;                                 // Compute X-axis output value in g's
-          //  Y1out_g = ((float) Y1out_12_bit) / SENSITIVITY_2G;                                 // Compute Y-axis output value in g's
-          //  Z1out_g = ((float) Z1out_12_bit) / SENSITIVITY_2G;                                 // Compute Z-axis output value in g's
-
+        if (IFS0bits.I2C1MIF == 1) {
+           mI2C1MClearIntFlag();                                                   // Clear the master interrupt flag if it is set
         }
-    }
-    
-    
-    /***************************************************************************
-     *                              Accel #2 read logic
-     * ************************************************************************/
-    else if((DataReady2 == 1) && (Accel1ReadStarted == 0)){
-        
-        Accel2ReadStarted = 1;                                                  //Global var to store which read is currently in progress
-    
-        //Finish the read process that is currently running
-        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2)) // Read data output registers 0x01-0x06
-        {
-            //===================================                               //Begin debug logic
-            if(InterruptCount == 70)
-                    InterruptCount = InterruptCount;
-            //===================================                               //End debug logic
-            
-            //Turn off the LED
-            LATDbits.LATD1 = 0;                                                 //Clear visual indication to signal that read is complete
 
-            DataReady2 = 0;                                                     // Reset var status
-            Accel2ReadStarted = 0;                                              // Reset var status
-            
-            INTRestoreInterrupts(IntStatus);                                    // restore the interrupts to previous state
-            
-            //Give the other accell priority for the next read
-            IEC0bits.INT1IE = 1;                                                // re-enable external interrupt 1
-            
-            return;
-           // IEC0bits.INT4IE=1;
-
-            // 12-bit accelerometer data
-          //  X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
-           // Y1out_12_bit = ((short) (ucDataArray[2]<<8 | ucDataArray[3])) >> 4;                // Compute 12-bit Y-axis acceleration output value
-           // Z1out_12_bit = ((short) (ucDataArray[4]<<8 | ucDataArray[5])) >> 4;                // Compute 12-bit Z-axis acceleration output value
-
-            // Accelerometer data converted to g's
-          //  X1out_g = ((float) X1out_12_bit) / SENSITIVITY_2G;                                 // Compute X-axis output value in g's
-          //  Y1out_g = ((float) Y1out_12_bit) / SENSITIVITY_2G;                                 // Compute Y-axis output value in g's
-          //  Z1out_g = ((float) Z1out_12_bit) / SENSITIVITY_2G;                                 // Compute Z-axis output value in g's
-
+        //May want to use this later to reset the current i2c operation
+        if (IFS0bits.I2C1BIF == 1) {
+            mI2C1BClearIntFlag();                                                   // Clear the bus fault interrupt flag if it is set
         }
+        
+        
+
+        switch (DataReady)
+        {
+
+            case 1 : 
+
+                /***************************************************************************
+                 *                              Accel #1 read logic
+                 * ************************************************************************/
+                Accel1ReadStarted = 1;                                                  //Global var to store which read is currently in progress
+
+                //Finish the read process that is currently running
+                if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1))                // Read data output registers 0x01-0x06
+                {
+                    //Turn off the LED
+                    LATDbits.LATD1 = 0;                                                 //Clear visual indication to signal that read is complete
+
+                    DataReady = 0;                                                     // Reset var status
+                    Accel1ReadStarted = 0;                                              // Reset var status
+
+            //            INTRestoreInterrupts(IntStatus);                                    // restore the interrupts to previous state
+
+                    //Give the other accell priority for the next read (if it is ready)
+                    //IEC0bits.INT4IE = 1;                                                // re-enable external interrupt 4
+                    INTEnable(INT_INT4, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+
+              
+                    if((PORTDbits.RD11 == 0x00) && (IFS0bits.INT4IF == 0)){
+                        Accel1ReadStarted = 0;
+                        INTSetFlag(INT_INT4);
+                    }
+                    
+                    
+                    //}
+                    //else{
+                   //     IEC0bits.INT1IE=1;
+                    //}
+
+
+                    // 12-bit accelerometer data
+                  //  X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
+                   // Y1out_12_bit = ((short) (ucDataArray[2]<<8 | ucDataArray[3])) >> 4;                // Compute 12-bit Y-axis acceleration output value
+                   // Z1out_12_bit = ((short) (ucDataArray[4]<<8 | ucDataArray[5])) >> 4;                // Compute 12-bit Z-axis acceleration output value
+
+                    // Accelerometer data converted to g's
+                  //  X1out_g = ((float) X1out_12_bit) / SENSITIVITY_2G;                                 // Compute X-axis output value in g's
+                  //  Y1out_g = ((float) Y1out_12_bit) / SENSITIVITY_2G;                                 // Compute Y-axis output value in g's
+                  //  Z1out_g = ((float) Z1out_12_bit) / SENSITIVITY_2G;                                 // Compute Z-axis output value in g's
+
+                }
+
+                break;
+            case 2 :
+
+                /***************************************************************************
+                 *                              Accel #2 read logic
+                 * ************************************************************************/
+
+                Accel2ReadStarted = 1;                                                  //Global var to store which read is currently in progress
+
+                //Finish the read process that is currently running
+                if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2)) // Read data output registers 0x01-0x06
+                {
+                    //Turn off the LED
+                    LATDbits.LATD1 = 0;                                                 //Clear visual indication to signal that read is complete
+
+                    DataReady = 0;                                                     // Reset var status
+                    Accel2ReadStarted = 0;                                              // Reset var status
+
+            //            INTRestoreInterrupts(IntStatus);                                    // restore the interrupts to previous state
+
+                    //Give the other accell priority for the next read
+                    //IEC0bits.INT1IE = 1;                                                // re-enable external interrupt 1
+                    INTEnable(INT_INT1, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+                   
+                    if((PORTDbits.RD8 == 0x00) && (IFS0bits.INT1IF == 0)){
+                        Accel1ReadStarted = 0;
+                        INTSetFlag(INT_INT1);
+                    }
+                    
+                    // IEC0bits.INT4IE=1;
+
+                    // 12-bit accelerometer data
+                  //  X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
+                   // Y1out_12_bit = ((short) (ucDataArray[2]<<8 | ucDataArray[3])) >> 4;                // Compute 12-bit Y-axis acceleration output value
+                   // Z1out_12_bit = ((short) (ucDataArray[4]<<8 | ucDataArray[5])) >> 4;                // Compute 12-bit Z-axis acceleration output value
+
+                    // Accelerometer data converted to g's
+                  //  X1out_g = ((float) X1out_12_bit) / SENSITIVITY_2G;                                 // Compute X-axis output value in g's
+                  //  Y1out_g = ((float) Y1out_12_bit) / SENSITIVITY_2G;                                 // Compute Y-axis output value in g's
+                  //  Z1out_g = ((float) Z1out_12_bit) / SENSITIVITY_2G;                                 // Compute Z-axis output value in g's
+
+                }
+
+                break;
+
+            default:
+                break;
+                
+        }
+
+   
     }
     
 }
@@ -381,8 +385,6 @@ void __ISR(_CORE_TIMER_VECTOR, IPL1SOFT) CoreTimerHandler(void)
    }
 
    func_GetRemainingTime_ms(&msTestCycleTimer, mSec_CurrentCount);              // Update the test cycle timer
-// func_GetRemainingTime_ms(&msLogTimer1, mSec_CurrentCount);
-// func_GetRemainingTime_ms(&msLogTimer2, mSec_CurrentCount);
   
 }
 
@@ -554,6 +556,19 @@ if(0 < iDeviceCount)                                                            
 
     //Begin Main Loop    
     while(!msTestCycleTimer.TimerComplete){
+        
+        if(PORTDbits.RD8 == 0x00){
+            Accel1ReadStarted = 0;
+        }
+        else{
+            Accel1ReadStarted = 0;
+        }
+        if(PORTDbits.RD11 == 0x00){
+            Accel1ReadStarted = 0;
+        }
+        else{
+            Accel1ReadStarted = 0;
+        }
         /*
         //Prevent an interrupt deadlock
         if( ((IFS0bits.INT1IF == 0) && (IEC0bits.INT1IE == 1)) ||
