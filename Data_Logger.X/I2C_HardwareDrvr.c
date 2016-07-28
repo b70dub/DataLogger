@@ -165,6 +165,7 @@ UINT8 ScanNetwork(UINT8* ucAddressArray_ref) {
 ?During a slave-detected Stop ? When slave sets the P bit (I2CxSTAT<4>)
  
  */
+/*
 static BOOL I2C_Idle(void) {                                                     //- Supporting Function
    //Check to see if the Master I2C state is inactive
     if(I2CCONbits.SEN || I2CCONbits.PEN || I2CCONbits.RCEN ||
@@ -174,7 +175,8 @@ static BOOL I2C_Idle(void) {                                                    
         return TRUE;
     }   
 }
-
+*/
+/*
 static BOOL I2C_Start(void) {                                                    //- Supporting Function
     static UINT8 StartConditionStep = 1;
     
@@ -227,7 +229,7 @@ static BOOL I2C_Start(void) {                                                   
         }   
     }  
 }
-
+*/
 static BOOL I2C_Stop(void) {                                                     //- Supporting Function
     if(I2CSTATbits.P != 1){
         //Check for bus collision

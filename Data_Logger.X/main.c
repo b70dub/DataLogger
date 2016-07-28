@@ -224,8 +224,6 @@ void __ISR(_I2C_1_VECTOR, IPL4AUTO) _MasterI2CHandler(void)
             mI2C1BClearIntFlag();                                                   // Clear the bus fault interrupt flag if it is set
         }
         
-        
-
         switch (DataReady)
         {
 
@@ -557,18 +555,7 @@ if(0 < iDeviceCount)                                                            
     //Begin Main Loop    
     while(!msTestCycleTimer.TimerComplete){
         
-        if(PORTDbits.RD8 == 0x00){
-            Accel1ReadStarted = 0;
-        }
-        else{
-            Accel1ReadStarted = 0;
-        }
-        if(PORTDbits.RD11 == 0x00){
-            Accel1ReadStarted = 0;
-        }
-        else{
-            Accel1ReadStarted = 0;
-        }
+       
         /*
         //Prevent an interrupt deadlock
         if( ((IFS0bits.INT1IF == 0) && (IEC0bits.INT1IE == 1)) ||
