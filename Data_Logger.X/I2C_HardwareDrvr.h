@@ -59,54 +59,50 @@ __inline__ static BOOL I2C_Idle(void) {                                         
 __inline__ static BOOL I2C_Start(void){                                                    //- Supporting Function
     static UINT8 StartConditionStep = 1;
     
-    // Step 1: wait for module idle, set the start condition and check for bus collision
-    if(StartConditionStep == 1){
-     
-        //Check for bus in idle state
-        if (I2C_Idle()) {
-            // Enable the Start condition
-            I2CCONbits.SEN = 1;
-            StartConditionStep = 2;
-            return FALSE;
-
-        } else {
-            return FALSE;
-        }
-    } 
+    BOOL bReturnValue = FALSE;
     
-    //Step 2: Check for Bus collision and start condition
-    if (StartConditionStep == 2){
-        
-         // Check for collisions
-        //If a bus collision occurred then clear the bus collision bit
-        if(I2CSTATbits.BCL == 1){
-            //Initiate a stop request (IF NOT PENDING)
-            if(I2C_Stop()){
+    switch (StartConditionStep){
+        case 1 : // Step 1: wait for module idle, set the start condition
+            
+            if (I2C_Idle()) {
+                // Enable the Start condition
+                I2CCONbits.SEN = 1;
+                StartConditionStep = 2;
+            } 
+            break;
+            
+        case 2 : //Step 2: Check for Bus collision and start condition
+            
+             // Check for collisions
+            //If a bus collision occurred then clear the bus collision bit
+            if(I2CSTATbits.BCL == 1){
+                //Initiate a stop request (IF NOT PENDING)
+                if(I2C_Stop()){
+                    //Reset the start step
+                    StartConditionStep = 1;
+                } else {
+                    I2CSTATbits.BCL = 1;
+                }
+            }
+            else if(I2CSTATbits.S == 1) {
+                if(I2C_Idle()){
+                    StartConditionStep = 1;
+                    bReturnValue = TRUE;
+                }
+
+            } else {                                                                //Unknown error occured
+                //Initiate a stop request
+                I2C_Stop();
+
                 //Reset the start step
                 StartConditionStep = 1;
-            } else {
-                I2CSTATbits.BCL = 1;
             }
-            return FALSE;
-        }
-        else if(I2CSTATbits.S == 1) {
-            if(I2C_Idle()){
-                StartConditionStep = 1;
-                return TRUE;
-            }
-            else{
-                return FALSE;
-            }
-                
-        } else {                                                                //Unknown error occured
-            //Initiate a stop request
-            I2C_Stop();
             
-            //Reset the start step
-            StartConditionStep = 1;
-            return FALSE;
-        }   
-    }  
+            break;
+    }
+    
+    return bReturnValue;
+    
 }
 
 

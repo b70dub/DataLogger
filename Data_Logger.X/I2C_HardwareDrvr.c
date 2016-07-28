@@ -250,6 +250,7 @@ static BOOL I2C_Stop(void) {                                                    
 /* Initial call to this function should be preceded by a call to I2C_Start()*/    
 static BOOL I2C_SendByte(BYTE data){                                            //- Supporting Function
     BOOL bError = FALSE;
+    BOOL bReturnValue = FALSE;
     static UINT8 SendByteStepNo = 1;
     /*
      *  TBF: Transmit Buffer Full Status bit
@@ -280,12 +281,8 @@ static BOOL I2C_SendByte(BYTE data){                                            
                 } else {
                     SendByteStepNo = 2;                          //Now wait for master interrupt for transmit complete
                 }
-                
-                return FALSE; 
-                
-            } else {
-                return (FALSE);                                                 //Should never be in this condition (buffer should never be full in case 1)
-            }
+            } 
+            break;
         
         case 2 : //Step 2: Wait for the Byte transmitted master mode interrupt
 
@@ -307,17 +304,17 @@ static BOOL I2C_SendByte(BYTE data){                                            
                if ((I2CSTATbits.BCL == 1)) {
                    SendByteStepNo = 1;
                    I2CBusCollision = TRUE;
-                   return (FALSE);
                } else  {
                  
                    //Step 3: Check for Bus Idle                                 //Bus should already be idle if the transmit is complete? (Single master only)
                     SendByteStepNo = 1;
-                    return (TRUE);                                                      //Success
+                    bReturnValue = TRUE;                                                      //Success
                }
-           } else {
-               return (FALSE);
-           }
+           } 
+           break;
     }
+    
+    return bReturnValue;
 }
 
 
@@ -333,356 +330,337 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
     static UINT8 ByteCount = 0;
     static UINT8 ByteReadStep = 0;
     
-    //If the read just started then initialize the read status vars
-    if(StepNo == 0)
-    {
-        StepNo = 1;
-        ReadTries = 0;
-        AddressChkStep = 1;
-        ReadModeStep = 1;
-        ByteCount = 0;
-        ByteReadStep = 1;
-        I2CBusCollision = FALSE;
-    }
-        
-    //Step 1: Wait for Device addr ack
-    if(StepNo == 1){
-        if(ReadTries < 100){
+    BOOL bReturnValue = FALSE;
+    
+    switch(StepNo){
+        case 0 : //Step 0: If the read just started then Initialize variables
+            StepNo = 1;
+            ReadTries = 0;
+            AddressChkStep = 1;
+            ReadModeStep = 1;
+            ByteCount = 0;
+            ByteReadStep = 1;
+            I2CBusCollision = FALSE;
             
-            switch (AddressChkStep)
-            {
-            case 1 : //Step 1: i2c start
-                if(I2C_Start()){
-                    AddressChkStep = 2;
-                    I2CBusCollision = FALSE;
-                       
-                    if(I2C_SendByte((slave_adr << 1) | 0)){
-                        AddressChkStep = 3;
+            //fall through to next case
+            
+        case 1 :
+            
+            if(ReadTries < 100){
+            
+                switch (AddressChkStep){
+                    case 1 : //Step 1: i2c start
+                        if(I2C_Start()){
+                            AddressChkStep = 2;
+                            I2CBusCollision = FALSE;
+
+                            if(I2C_SendByte((slave_adr << 1) | 0)){
+                                AddressChkStep = 3;
+
+                                // Wait for transmit complete
+                                if(I2CSTATbits.TRSTAT == 0){
+                                    if (I2CSTATbits.ACKSTAT == 0){                          // Did we receive an ACK ?
+                                        StepNo = 2;
+                                        ReadTries = 0;
+                                    } else{
+                                        ReadTries++;
+                                        AddressChkStep = 1;
+                                    }
+                                } 
+
+                            } else {
+                                //Handle a bus collision event that happened in the send byte function
+                                if(I2CBusCollision == TRUE){
+                                    StepNo = 1;
+
+                                    if(I2C_Start()){                       //Call the I2C_Start() to generate another interrupt
+                                        AddressChkStep = 2;
+                                        I2CBusCollision = FALSE;
+                                    }
+                                }
+                            }
+
+                        } 
                         
+                        break;
+
+                    case 2 : //Step 2: Set Slave in W Mode and Send the Byte
+
+                        if(I2C_SendByte( (slave_adr << 1) | 0)){
+                            AddressChkStep = 3;
+
+                            // Wait for transmit complete
+                            if(I2CSTATbits.TRSTAT == 0){
+
+                                if (I2CSTATbits.ACKSTAT == 0){                      // Did we receive an ACK ?
+                                    StepNo = 2;
+                                    ReadTries = 0;
+                                } else{
+                                    ReadTries++;
+                                    AddressChkStep = 1;
+                                }
+                            } 
+                        } else {
+                            //Handle a bus collision event that happened in the send byte function
+                            if(I2CBusCollision == TRUE){
+                                StepNo = 1;
+                                if(I2C_Start()){                                //Call the I2C_Start() to generate another interrupt
+                                    AddressChkStep = 2;
+                                    I2CBusCollision = FALSE;
+                                }
+                            }
+                        }
+                        
+                        break;
+
+                    case 3 : //Step 3: Wait for Transmit complete and check for slave ACK
+
                         // Wait for transmit complete
                         if(I2CSTATbits.TRSTAT == 0){
-                            if (I2CSTATbits.ACKSTAT == 0){                          // Did we receive an ACK ?
+                            if (I2CSTATbits.ACKSTAT == 0){                      // Did we receive an ACK ?
                                 StepNo = 2;
                                 ReadTries = 0;
-
-                                break;
                             } else{
                                 ReadTries++;
                                 AddressChkStep = 1;
-                                return FALSE;
                             }
-                        } else {
-                            return FALSE;
-                        }
+                        } 
                         
-                    } else {
-                        //Handle a bus collision event that happened in the send byte function
-                        if(I2CBusCollision == TRUE){
-                            StepNo = 1;
-                            
-                            if(I2C_Start()){                       //Call the I2C_Start() to generate another interrupt
-                                AddressChkStep = 2;
-                                I2CBusCollision = FALSE;
-                            }
-                        }
-                        return FALSE;
-                    }
-
-                } else {
-                    return FALSE;
-                }
-
-            case 2 : //Step 2: Set Slave in W Mode and Send the Byte
-
-                if(I2C_SendByte( (slave_adr << 1) | 0)){
-                    AddressChkStep = 3;
-
-                    // Wait for transmit complete
-                    if(I2CSTATbits.TRSTAT == 0){
-
-                        if (I2CSTATbits.ACKSTAT == 0){                          // Did we receive an ACK ?
-                            StepNo = 2;
-                            ReadTries = 0;
-
-                            break;
-                        } else{
-                            ReadTries++;
-                            AddressChkStep = 1;
-                            return FALSE;
-                        }
-                    } else {
-                        return FALSE;
-                    }
-
-                } else {
-                    //Handle a bus collision event that happened in the send byte function
-                    if(I2CBusCollision == TRUE){
-                        StepNo = 1;
-                        if(I2C_Start()){                       //Call the I2C_Start() to generate another interrupt
-                            AddressChkStep = 2;
-                            I2CBusCollision = FALSE;
-                        }
-                    }
-                    return FALSE;
-                }
-
-            case 3 : //Step 3: Wait for Transmit complete and check for slave ACK
-                   
-                // Wait for transmit complete
-                if(I2CSTATbits.TRSTAT == 0){
-                    if (I2CSTATbits.ACKSTAT == 0){                          // Did we receive an ACK ?
-                        StepNo = 2;
-                        ReadTries = 0;
-
                         break;
-                    } else{
-                        ReadTries++;
-                        AddressChkStep = 1;
-                        return FALSE;
-                    }
-                } else {
-                    return FALSE;
-                }
-            }
-        }
-        else{                                                                   // Did we time out? -> Error and return 
-            StepNo = 0;
-            return FALSE;
-        }
-    }
-    
-    // Step2: if slave ackd then put the register number on the bus
-    if(StepNo == 2){
-        
-        if(I2C_SendByte(reg)){
-          
-            if (I2CSTATbits.ACKSTAT != 0){                                      // Did we receive an ACK ?  if not  -> Error and return   
-                StepNo = 0;
-                return FALSE;                                                   // Exit if there was a problem 
-            }
-            else{
-                StepNo = 3;
-                ReadTries = 0;
-            }
-        } else {
-            //Handle a bus collision event that happened in the send byte function
-            if(I2CBusCollision == TRUE){
-                StepNo = 1;
-                if(I2C_Start()){                                   //Call the I2C_Start() to generate another interrupt
-                    AddressChkStep = 2;
-                    I2CBusCollision = FALSE;
-                }
-            }
-            return FALSE;
-        }
-    }
-    
-    // Step3: Now that the register address is setup, we can ask the slave to enter read mode.
-    if(StepNo == 3){        
-        
-        if(ReadTries < 100){
-            
-            switch (ReadModeStep)
-            {
-            case 1 : //Step 1: i2c start
-                if(I2C_Start()){
-                    I2CBusCollision = FALSE;
-                    ReadModeStep = 2;
-
-                    if(I2C_SendByte( (slave_adr << 1) | 1) ){
-                        ReadModeStep = 3;
                         
-                        //Wait for Transmit complete and check for slave ACK
-                        if(I2CSTATbits.TRSTAT == 0){
+                    default:        //Error restart sequence
+                        StepNo = 0;
+                        break;
+                }
+            }
+            else{                                                               // Did we time out? -> Error and return 
+                StepNo = 0;
+            }
+            
+            if(StepNo != 2)
+                break;
+            
+            //Otherwise fall through to step 2
+            
+        case 2 : // Step2: if slave ackd then put the register number on the bus
+            
+            if(I2C_SendByte(reg)){
+
+                if (I2CSTATbits.ACKSTAT != 0){                                  // Did we receive an ACK ?  if not  -> Error and return   
+                    StepNo = 0;
+                }
+                else{
+                    StepNo = 3;
+                    ReadTries = 0;
+                }
+            } else {
+                //Handle a bus collision event that happened in the send byte function
+                if(I2CBusCollision == TRUE){
+                    StepNo = 1;
+                    if(I2C_Start()){                                            //Call the I2C_Start() to generate another interrupt
+                        AddressChkStep = 2;
+                        I2CBusCollision = FALSE;
+                    }
+                }
+            }
+            
+            if(StepNo != 3)
+                break;
+        
+        case 3 : // Step3: Now that the register address is setup, we can ask the slave to enter read mode.
+            
+             if(ReadTries < 100){
+            
+                switch (ReadModeStep){
+                
+                    case 1 : //Step 1: i2c start
+                        if(I2C_Start()){
+                            I2CBusCollision = FALSE;
+                            ReadModeStep = 2;
+
+                            if(I2C_SendByte( (slave_adr << 1) | 1) ){
+                                ReadModeStep = 3;
+
+                                //Wait for Transmit complete and check for slave ACK
+                                if(I2CSTATbits.TRSTAT == 0){
+
+                                    if (I2CSTATbits.ACKSTAT == 0){                          // Did we receive an ACK ?
+                                        StepNo = 4;
+                                        ReadTries = 0;
+                                    } else{
+                                        ReadTries++;
+                                    }
+                                }
+                            } else {
+                                //Handle a bus collision event that happened in the send byte function
+                                if(I2CBusCollision == TRUE){
+                                    ReadModeStep = 1;
+
+                                    if(I2C_Start()){                            //Call the I2C_Start() to generate another interrupt
+                                        ReadModeStep = 2;
+                                        I2CBusCollision = FALSE;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        break;
+
+                    case 2 : //Step 2: Set Slave in R Mode and Send the Address Byte
+
+                        if(I2C_SendByte( (slave_adr << 1) | 0 )){
+                            ReadModeStep = 3;
+
+                            //Wait for Transmit complete and check for slave ACK
+                            if(I2CSTATbits.TRSTAT == 0){
+
+                                if (I2CSTATbits.ACKSTAT == 0){                  // Did we receive an ACK ?
+                                    StepNo = 4;
+                                    ReadTries = 0;
+                                } else{
+                                    ReadTries++;
+                                }
+                            }
+                            
+                        } else {
+                            //Handle a bus collision event that happened in the send byte function
+                            if(I2CBusCollision == TRUE){
+                                ReadModeStep = 1;
+
+                                if(I2C_Start()){                                //Call the I2C_Start() to generate another interrupt
+                                    ReadModeStep = 2;
+                                    I2CBusCollision = FALSE;
+                                }
+                            }
+                        }
+                        
+                        break;
+
+                    case 3 : //Step 3: Wait for Transmit complete and check for slave ACK
+
+                       if(I2CSTATbits.TRSTAT == 0){
 
                             if (I2CSTATbits.ACKSTAT == 0){                          // Did we receive an ACK ?
                                 StepNo = 4;
                                 ReadTries = 0;
-
-                                break;
                             } else{
                                 ReadTries++;
-                                return FALSE;
                             }
-                        } else {
-                            return FALSE;
-                        }
-                    } else {
-                        //Handle a bus collision event that happened in the send byte function
-                        if(I2CBusCollision == TRUE){
-                            ReadModeStep = 1;
-                            
-                            if(I2C_Start()){                       //Call the I2C_Start() to generate another interrupt
-                                ReadModeStep = 2;
-                                I2CBusCollision = FALSE;
-                            }
-                        }
-                        return FALSE;
-                    }
-                } else { 
-                    return FALSE;
-                }
-
-            case 2 : //Step 2: Set Slave in R Mode and Send the Address Byte
-
-                if(I2C_SendByte( (slave_adr << 1) | 0 )){
-                    ReadModeStep = 3;
-
-                    //Wait for Transmit complete and check for slave ACK
-                    if(I2CSTATbits.TRSTAT == 0){
-
-                        if (I2CSTATbits.ACKSTAT == 0){                          // Did we receive an ACK ?
-                            StepNo = 4;
-                            ReadTries = 0;
-
-                            break;
-                        } else{
-                            ReadTries++;
-                            return FALSE;
-                        }
-                    } else {
-                        return FALSE;
-                    }
-                } else {
-                    //Handle a bus collision event that happened in the send byte function
-                    if(I2CBusCollision == TRUE){
-                        ReadModeStep = 1;
-                        
-                        if(I2C_Start()){                       //Call the I2C_Start() to generate another interrupt
-                            ReadModeStep = 2;
-                            I2CBusCollision = FALSE;
-                        }
-                    }
-                    return FALSE;
-                }
-
-            case 3 : //Step 3: Wait for Transmit complete and check for slave ACK
-
-               if(I2CSTATbits.TRSTAT == 0){
-
-                    if (I2CSTATbits.ACKSTAT == 0){                          // Did we receive an ACK ?
-                        StepNo = 4;
-                        ReadTries = 0;
-
+                        } 
+                       break;
+                       
+                    default:
                         break;
-                    } else{
-                        ReadTries++;
-                        return FALSE;
-                    }
-                } else {
-                    return FALSE;
                 }
             }
-        }
-        else{
-            StepNo = 1;
-            return FALSE;
-        } 
-    }
+            else{
+                StepNo = 1;
+            } 
+             
+             if(StepNo != 4)
+                break;
+         
+        case 4 : // Step 4: Read in the bytes
+            
+            if(ByteCount < len){
+                switch (ByteReadStep)
+                {
+                    case 1 : //Step 1: //Wait for Bus idle
 
-    // Step 4: Read in the bytes
-    if(StepNo == 4){
-        
-        if(ByteCount < len){
-            switch (ByteReadStep)
-            {
-                
-            case 1 : //Step 1: //Wait for Bus idle
-                
-                //Check for bus in idle state
-                if (I2C_Idle()) {
-                    I2CCONbits.RCEN = 1;                                        // enable master read
-                    ByteReadStep = 2;
+                        //Check for bus in idle state
+                        if (I2C_Idle()) {
+                            I2CCONbits.RCEN = 1;                                        // enable master read
+                            ByteReadStep = 2;
 
-                    if(!I2CCONbits.RCEN){                                       // wait for byte to be received !(I2CSTATbits.RBF) --rcen automatically clears when recvd
-                        ByteReadStep = 3;
+                            if(!I2CCONbits.RCEN){                                       // wait for byte to be received !(I2CSTATbits.RBF) --rcen automatically clears when recvd
+                                ByteReadStep = 3;
 
-                        I2CSTATbits.I2COV = 0;                                      //Reset bit incase data came before we extracted the last set of data
-                        *(rxPtr + ByteCount) = I2CRCV;
+                                I2CSTATbits.I2COV = 0;                                      //Reset bit incase data came before we extracted the last set of data
+                                *(rxPtr + ByteCount) = I2CRCV;
 
-                        if ((ByteCount + 1) == len) {
+                                if ((ByteCount + 1) == len) {
 
-                            //9. Generate a NACK on last byte
-                            I2CCONbits.ACKDT = 1; // send nack
-                            I2CCONbits.ACKEN = 1;
+                                    //9. Generate a NACK on last byte
+                                    I2CCONbits.ACKDT = 1; // send nack
+                                    I2CCONbits.ACKEN = 1;
 
-                            ByteReadStep = 4;
+                                    ByteReadStep = 4;
 
-                            //10. generate a stop
-                            if(I2C_Stop()) {
-                                ByteCount++;
+                                    //10. generate a stop
+                                    if(I2C_Stop()) {
+                                        ByteCount++;
+                                    } 
+
+                                } else {
+                                    I2CCONbits.ACKDT = 0; // send ACK for sequential reads
+                                    I2CCONbits.ACKEN = 1;
+
+                                     ByteCount++;
+                                     ByteReadStep = 1;
+                                }
                             } 
-                            return FALSE; 
-
-                        } else {
-                            I2CCONbits.ACKDT = 0; // send ACK for sequential reads
-                            I2CCONbits.ACKEN = 1;
-
-                             ByteCount++;
-                             ByteReadStep = 1;
                         }
-                        return FALSE;
-                    } else {
-                        return FALSE;
-                    }
-                } else{
-                    return FALSE;
-                }
-                
-            case 2 : //Step 2: Wait for Data received register
-                
-                if(!I2CCONbits.RCEN){                                       // wait for byte to be received !(I2CSTATbits.RBF) --rcen automatically clears when recvd
+                        break;
 
-                    I2CSTATbits.I2COV = 0;                                      //Reset bit incase data came before we extracted the last set of data
-                    *(rxPtr + ByteCount) = I2CRCV;
+                    case 2 : //Step 2: Wait for Data received register
 
-                    if ((ByteCount + 1) == len) {
+                        if(!I2CCONbits.RCEN){                                       // wait for byte to be received !(I2CSTATbits.RBF) --rcen automatically clears when recvd
 
-                        //9. Generate a NACK on last byte
-                        I2CCONbits.ACKDT = 1; // send nack
-                        I2CCONbits.ACKEN = 1;
+                            I2CSTATbits.I2COV = 0;                                      //Reset bit incase data came before we extracted the last set of data
+                            *(rxPtr + ByteCount) = I2CRCV;
 
-                        ByteReadStep = 3;
+                            if ((ByteCount + 1) == len) {
 
-                        //10. generate a stop
+                                //9. Generate a NACK on last byte
+                                I2CCONbits.ACKDT = 1; // send nack
+                                I2CCONbits.ACKEN = 1;
+
+                                ByteReadStep = 3;
+
+                                //10. generate a stop
+                                if(I2C_Stop()) {
+                                    StepNo = 0;
+                                    bReturnValue = TRUE; 
+                                } 
+                                
+                            } else {
+                                I2CCONbits.ACKDT = 0; // send ACK for sequential reads
+                                I2CCONbits.ACKEN = 1;
+
+                                 ByteCount++;
+                                 ByteReadStep = 1;
+                            }
+
+                        } 
+                        break;
+
+                    case 3 : //Step 3: Send stop bit
+
+                        //10. generate a stop (if not idle)
                         if(I2C_Stop()) {
                             StepNo = 0;
-                            return TRUE;
-                        }
-                        return FALSE;   
-
-                    } else {
-                        I2CCONbits.ACKDT = 0; // send ACK for sequential reads
-                        I2CCONbits.ACKEN = 1;
-
-                         ByteCount++;
-                         ByteReadStep = 1;
-                    }
-                    return FALSE;
-
-                } else {
-                    return FALSE;
+                            bReturnValue = TRUE;                                                //Success    
+                        }  
+                        break;
+                        
+                    default:
+                        break;
                 }
-
-            case 3 : //Step 3: Send stop bit
-                
-                //10. generate a stop (if not idle)
-                if(I2C_Stop()) {
-                    StepNo = 0;
-                    return TRUE;                                                //Success    
-                }
-                return FALSE;                   
             }
-        }
+
+            if(I2C_Stop()) {
+                StepNo = 0;
+                bReturnValue = TRUE;                                                            //Success      
+            }
+         
+            break;
         
-        if(I2C_Stop()) {
-            StepNo = 0;
-            return TRUE;                                                            //Success      
-        }
-        else {
-            return FALSE;
-        }
+        default:
+            break;
     }
+    
+    return bReturnValue;
+    
 }
 
 
