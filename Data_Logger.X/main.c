@@ -97,77 +97,86 @@ FIL file1, file2;      /* File objects */
 
 /* Interrupt service routine of external int 1    */
 void __ISR(_EXTERNAL_1_VECTOR,IPL3AUTO) INT1InterruptHandler(void){             //Acellerometer 1 : Data Ready
+    
     INTClearFlag(INT_INT1);                                                     // Clear the interrupt flag
-    INTEnable(INT_I2C1B, INT_DISABLED);                                         // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED     
-    INTEnable(INT_I2C1M, INT_DISABLED);                                         // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
-    INTEnable(INT_INT1, INT_DISABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
-   
-    //===================================                                       //Begin debug logic
-    if(InterruptCount == 75)
-        InterruptCount = InterruptCount;
     
-    if(DataReady == 2)
-        InterruptCount = InterruptCount;
-    //===================================                                       //End debug logic
-    
-    DataReady = 1;                                                             //Global var to store which interrupt was last detected
-    Accel1ReadStarted = 1;
+    if(0 == DataReady) {
+                                                            
+        INTEnable(INT_I2C1B, INT_DISABLED);                                         // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED     
+        INTEnable(INT_I2C1M, INT_DISABLED);                                         // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+      //  INTEnable(INT_INT1, INT_DISABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+      //  INTEnable(INT_INT4, INT_DISABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
 
-    //Turn on the LED
-    LATDbits.LATD1 = 1;                                                         //Visual indication of read status 
+        //===================================                                       //Begin debug logic
+        if(InterruptCount == 75)
+            InterruptCount = InterruptCount;
 
-    //Kickoff the device read process --> Once this happens then the Master I2C interrupt handler should finish the read
-    if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1)){  // Read data output registers 0x01-0x06
-        DataReady = 0;
-        Accel1ReadStarted = 0;
+        if(DataReady == 2)
+            InterruptCount = InterruptCount;
+        //===================================                                       //End debug logic
 
-        //Give the other accell priority for the next read
-        //IEC0bits.INT4IE = 1; // re-enable external interrupt 4
-        INTEnable(INT_INT4, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+        DataReady = 1;                                                             //Global var to store which interrupt was last detected
+
+        //Turn on the LED
+        LATDbits.LATD1 = 1;                                                         //Visual indication of read status 
+
+        //Kickoff the device read process --> Once this happens then the Master I2C interrupt handler should finish the read
+        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1)){  // Read data output registers 0x01-0x06
+            DataReady = 0;
+            Accel1ReadStarted = 0;
+
+            //Give the other accell priority for the next read
+            //IEC0bits.INT4IE = 1; // re-enable external interrupt 4
+        //    INTEnable(INT_INT4, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+        //    INTEnable(INT_INT1, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+        }
+
+        INTEnable(INT_I2C1B, INT_ENABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+        INTEnable(INT_I2C1M, INT_ENABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
     }
-   
-    INTEnable(INT_I2C1B, INT_ENABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
-    INTEnable(INT_I2C1M, INT_ENABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
 } 
 
 
 
 /* Interrupt service routine of external int 4    */
 
-void __ISR(_EXTERNAL_4_VECTOR,IPL2AUTO) INT4InterruptHandler(void)              //Acellerometer 2 : Data Ready
+void __ISR(_EXTERNAL_4_VECTOR,IPL4AUTO) INT4InterruptHandler(void)              //Acellerometer 2 : Data Ready
 { 
     INTClearFlag(INT_INT4);                                                     // Clear the interrupt flag
-    INTEnable(INT_I2C1B, INT_DISABLED);                                         // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
-    INTEnable(INT_I2C1M, INT_DISABLED);                                         // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
-    INTEnable(INT_INT4, INT_DISABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
-    //===================================                                       //Begin debug logic
-    InterruptCount++;
     
-    if(InterruptCount == 75)
-        InterruptCount = InterruptCount;
-            
-    if(DataReady == 1)
-        InterruptCount = InterruptCount;
-    //===================================                                       //End debug logic
-    
-    DataReady = 2;                                                             //Global var to store which interrupt was last detected
-    Accel2ReadStarted = 1;
-    
-    //Turn on the LED
-    LATDbits.LATD1 = 1;                                                         //Visual indication of read status
+    if(0 == DataReady) {
+        
+        DataReady = 2;                                                             //Global var to store which interrupt was last detected
+        INTEnable(INT_I2C1B, INT_DISABLED);                                         // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+        INTEnable(INT_I2C1M, INT_DISABLED);                                         // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+     //   INTEnable(INT_INT1, INT_DISABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+     //   INTEnable(INT_INT4, INT_DISABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+        //===================================                                       //Begin debug logic
+        InterruptCount++;
 
-    //Kickoff the device read process --> Once this happens then the Master I2C interrupt handler should finish the read
-    if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2)){ // Read data output registers 0x01-0x06
-        DataReady = 0;
-        Accel2ReadStarted = 0;
+        if(InterruptCount == 75)
+            InterruptCount = InterruptCount;
 
-        //Give the other accell priority for the next read
-//            IEC0bits.INT1IE = 1; // re-enable external interrupt 1
-        INTEnable(INT_INT1, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+        if(DataReady == 1)
+            InterruptCount = InterruptCount;
+        //===================================                                       //End debug logic
+
+        //Turn on the LED
+        LATDbits.LATD1 = 1;                                                         //Visual indication of read status
+
+        //Kickoff the device read process --> Once this happens then the Master I2C interrupt handler should finish the read
+        if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2)){ // Read data output registers 0x01-0x06
+            DataReady = 0;
+
+            //Give the other accell priority for the next read
+    //            IEC0bits.INT1IE = 1; // re-enable external interrupt 1
+         //   INTEnable(INT_INT1, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+         //   INTEnable(INT_INT4, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+        }
+
+        INTEnable(INT_I2C1B, INT_ENABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+        INTEnable(INT_I2C1M, INT_ENABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
     }
-   
-    INTEnable(INT_I2C1B, INT_ENABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
-    INTEnable(INT_I2C1M, INT_ENABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
 }
 
 
@@ -207,7 +216,7 @@ Bus Collision events that generate an interrupt are:
  */
 
 ///////////////////////////////////////////////////////////////////
-void __ISR(_I2C_1_VECTOR, IPL4AUTO) _MasterI2CHandler(void)
+void __ISR(_I2C_1_VECTOR, IPL2AUTO) _MasterI2CHandler(void)
 {
      // check for Slave and Bus events and return as we are not handling these
     if (IFS0bits.I2C1SIF == 1) {
@@ -232,7 +241,6 @@ void __ISR(_I2C_1_VECTOR, IPL4AUTO) _MasterI2CHandler(void)
                 /***************************************************************************
                  *                              Accel #1 read logic
                  * ************************************************************************/
-                Accel1ReadStarted = 1;                                                  //Global var to store which read is currently in progress
 
                 //Finish the read process that is currently running
                 if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_1))                // Read data output registers 0x01-0x06
@@ -241,19 +249,16 @@ void __ISR(_I2C_1_VECTOR, IPL4AUTO) _MasterI2CHandler(void)
                     LATDbits.LATD1 = 0;                                                 //Clear visual indication to signal that read is complete
 
                     DataReady = 0;                                                     // Reset var status
-                    Accel1ReadStarted = 0;                                              // Reset var status
-
             //            INTRestoreInterrupts(IntStatus);                                    // restore the interrupts to previous state
 
                     //Give the other accell priority for the next read (if it is ready)
                     //IEC0bits.INT4IE = 1;                                                // re-enable external interrupt 4
-                    INTEnable(INT_INT4, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
-
+                   // INTEnable(INT_INT4, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+                   // INTEnable(INT_INT1, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
               
-                    if((PORTDbits.RD11 == 0x00) && (IFS0bits.INT4IF == 0)){
-                        Accel1ReadStarted = 0;
-                        INTSetFlag(INT_INT4);
-                    }
+                //    if((PORTDbits.RD11 == 0x00) && (IFS0bits.INT4IF == 0)){
+                //        INTSetFlag(INT_INT4);
+                //    }
                     
                     
                     //}
@@ -281,8 +286,6 @@ void __ISR(_I2C_1_VECTOR, IPL4AUTO) _MasterI2CHandler(void)
                  *                              Accel #2 read logic
                  * ************************************************************************/
 
-                Accel2ReadStarted = 1;                                                  //Global var to store which read is currently in progress
-
                 //Finish the read process that is currently running
                 if(drvI2CReadRegisters(OUT_X_MSB_REG, ucDataArray, 6, MMA8452Q_ADDR_2)) // Read data output registers 0x01-0x06
                 {
@@ -290,18 +293,17 @@ void __ISR(_I2C_1_VECTOR, IPL4AUTO) _MasterI2CHandler(void)
                     LATDbits.LATD1 = 0;                                                 //Clear visual indication to signal that read is complete
 
                     DataReady = 0;                                                     // Reset var status
-                    Accel2ReadStarted = 0;                                              // Reset var status
 
             //            INTRestoreInterrupts(IntStatus);                                    // restore the interrupts to previous state
 
                     //Give the other accell priority for the next read
                     //IEC0bits.INT1IE = 1;                                                // re-enable external interrupt 1
-                    INTEnable(INT_INT1, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
-                   
-                    if((PORTDbits.RD8 == 0x00) && (IFS0bits.INT1IF == 0)){
-                        Accel1ReadStarted = 0;
-                        INTSetFlag(INT_INT1);
-                    }
+                 //   INTEnable(INT_INT1, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+                 //   INTEnable(INT_INT4, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+                    
+                 //   if((PORTDbits.RD8 == 0x00) && (IFS0bits.INT1IF == 0)){
+                 //       INTSetFlag(INT_INT1);
+                  //  }
                     
                     // IEC0bits.INT4IE=1;
 
@@ -506,16 +508,16 @@ mConfigIntCoreTimer((CT_INT_ON | CT_INT_PRIOR_1 | CT_INT_SUB_PRIOR_0));
    //Setup interrupts
  //removed temporarily
 ConfigINT1(EXT_INT_PRI_3 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT1              //Acellerometer 1 : Data Ready (External interrupt)
-SetSubPriorityINT1(EXT_INT_SUB_PRI_3);
+SetSubPriorityINT1(EXT_INT_SUB_PRI_2);
 
-ConfigINT4(EXT_INT_PRI_2 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT4             //future
+ConfigINT4(EXT_INT_PRI_4 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT4             //future
 SetSubPriorityINT4(EXT_INT_SUB_PRI_2);
 
 //==============================================================================
 // Set up the I2C Master Event interrupt with priority level 
 //==============================================================================
  // configure the interrupt priority for the I2C peripheral
- mI2C1SetIntPriority(I2C_INT_PRI_4);                                            //ISR priority level should match!!!!
+ mI2C1SetIntPriority(I2C_INT_PRI_2);                                            //ISR priority level should match!!!!
 
 //Blink the LED on power-up
 Func_ShowImAlive();
@@ -528,7 +530,6 @@ Func_ForceSlaveToReleaseSDA();
 INTClearFlag(INT_INT4); 
 INTClearFlag(INT_INT1); 
 INTEnableInterrupts();
-IEC0bits.INT4IE=0; // disable external interrupt 4
 
 IntStatus = INTDisableInterrupts();
 
@@ -543,8 +544,6 @@ if(0 < iDeviceCount)                                                            
 {
     MMA8452_Setup(iDeviceCount, NumInstalledAccels);
     
-  //  INTEnableInterrupts();
-
     INTRestoreInterrupts(IntStatus);                                            // restore the interrupts to previous state
     
     //Timer for test run time

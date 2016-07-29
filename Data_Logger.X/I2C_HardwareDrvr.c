@@ -45,17 +45,37 @@ PBCLK       I2CxBRG     PGD(1)      Approximate FSCK (two rollovers of BRG)
 10 MHz      0x02F       104 ns              100 kHz
 Note 1: The typical value of the Pulse Gobbler Delay (PGD) is 104 ns. Refer 
 */
+//__inline__
+ static BOOL I2C_Stop(void) {                                                     //- Supporting Function
+    if(I2CSTATbits.P != 1){
+        //Check for bus collision
+        if ((I2CSTATbits.BCL == 1)) {
+            I2CSTATbits.BCL = 0;
+            //I2CSTATbits = I2CSTATbits & 0xFBFF;
+        }
+        
+        //initiate stop bit
+        if(I2CCONbits.PEN != 1){
+            I2CCONbits.PEN = 1; 
+        }
+        return FALSE;         
+    } else {
+        return TRUE;
+    }  
+}
+    
 
-__inline__ static BOOL I2C_Idle(void) {                                                     //- Supporting Function
+ static BOOL I2C_Idle(void) {                                                     //- Supporting Function
    //Check to see if the Master I2C state is inactive
     if(I2CCONbits.SEN || I2CCONbits.PEN || I2CCONbits.RCEN || I2CCONbits.RSEN || I2CCONbits.ACKEN || I2CSTATbits.TRSTAT){
+      //  I2C_Stop();
         return FALSE;
     } else{
         return TRUE;
     }   
 }
 
-__inline__ static BOOL I2C_Start(void){                                                    //- Supporting Function
+ static BOOL I2C_Start(void){                                                    //- Supporting Function
     static UINT8 StartConditionStep = 1;
     
     BOOL bReturnValue = FALSE;
@@ -289,23 +309,7 @@ static BOOL I2C_Start(void) {                                                   
     }  
 }
 */
-static BOOL I2C_Stop(void) {                                                     //- Supporting Function
-    if(I2CSTATbits.P != 1){
-        //Check for bus collision
-        if ((I2CSTATbits.BCL == 1)) {
-            I2CSTATbits.BCL = 0;
-        }
-        
-        //initiate stop bit
-        if(I2CCONbits.PEN != 1){
-            I2CCONbits.PEN = 1; 
-        }
-        return FALSE;         
-    } else {
-        return TRUE;
-    }  
-}
-    
+
 /* Initial call to this function should be preceded by a call to I2C_Start()*/    
 static BOOL I2C_SendByte(BYTE data){                                            //- Supporting Function
     BOOL bError = FALSE;
@@ -409,56 +413,20 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
             
                 switch (AddressChkStep){
                     case 1 : //Step 1: i2c start
+                        
                         if(I2C_Start()){
                             AddressChkStep = 2;
                             I2CBusCollision = FALSE;
-
-                            if(I2C_SendByte((slave_adr << 1) | 0)){
-                                AddressChkStep = 3;
-
-                                // Wait for transmit complete
-                                if(I2CSTATbits.TRSTAT == 0){
-                                    if (I2CSTATbits.ACKSTAT == 0){                          // Did we receive an ACK ?
-                                        StepNo = 2;
-                                        ReadTries = 0;
-                                    } else{
-                                        ReadTries++;
-                                        AddressChkStep = 1;
-                                    }
-                                } 
-
-                            } else {
-                                //Handle a bus collision event that happened in the send byte function
-                                if(I2CBusCollision == TRUE){
-                                    StepNo = 1;
-
-                                    if(I2C_Start()){                       //Call the I2C_Start() to generate another interrupt
-                                        AddressChkStep = 2;
-                                        I2CBusCollision = FALSE;
-                                    }
-                                }
-                            }
-
                         } 
                         
-                        break;
+                        if(AddressChkStep != 2)
+                            break;
 
                     case 2 : //Step 2: Set Slave in W Mode and Send the Byte
 
                         if(I2C_SendByte( (slave_adr << 1) | 0)){
                             AddressChkStep = 3;
 
-                            // Wait for transmit complete
-                            if(I2CSTATbits.TRSTAT == 0){
-
-                                if (I2CSTATbits.ACKSTAT == 0){                      // Did we receive an ACK ?
-                                    StepNo = 2;
-                                    ReadTries = 0;
-                                } else{
-                                    ReadTries++;
-                                    AddressChkStep = 1;
-                                }
-                            } 
                         } else {
                             //Handle a bus collision event that happened in the send byte function
                             if(I2CBusCollision == TRUE){
@@ -470,30 +438,30 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                             }
                         }
                         
-                        break;
+                        if(AddressChkStep != 3)
+                            break;
 
                     case 3 : //Step 3: Wait for Transmit complete and check for slave ACK
 
-                        // Wait for transmit complete
-                        if(I2CSTATbits.TRSTAT == 0){
-                            if (I2CSTATbits.ACKSTAT == 0){                      // Did we receive an ACK ?
-                                StepNo = 2;
-                                ReadTries = 0;
-                            } else{
-                                ReadTries++;
-                                AddressChkStep = 1;
-                            }
-                        } 
-                        
+                        // After transmit complete
+                        if (I2CSTATbits.ACKSTAT == 0){                      // Did we receive an ACK ?
+                            StepNo = 2;
+                            ReadTries = 0;
+                        } else{
+                            ReadTries++;
+                            AddressChkStep = 1;
+                        }
                         break;
                         
                     default:        //Error restart sequence
                         StepNo = 0;
+                        I2C_Start();
                         break;
                 }
             }
             else{                                                               // Did we time out? -> Error and return 
                 StepNo = 0;
+                I2C_Start();
             }
             
             if(StepNo != 2)
@@ -507,6 +475,7 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
 
                 if (I2CSTATbits.ACKSTAT != 0){                                  // Did we receive an ACK ?  if not  -> Error and return   
                     StepNo = 0;
+                    I2C_Start();
                 }
                 else{
                     StepNo = 3;
@@ -536,51 +505,15 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                         if(I2C_Start()){
                             I2CBusCollision = FALSE;
                             ReadModeStep = 2;
-
-                            if(I2C_SendByte( (slave_adr << 1) | 1) ){
-                                ReadModeStep = 3;
-
-                                //Wait for Transmit complete and check for slave ACK
-                                if(I2CSTATbits.TRSTAT == 0){
-
-                                    if (I2CSTATbits.ACKSTAT == 0){                          // Did we receive an ACK ?
-                                        StepNo = 4;
-                                        ReadTries = 0;
-                                    } else{
-                                        ReadTries++;
-                                    }
-                                }
-                            } else {
-                                //Handle a bus collision event that happened in the send byte function
-                                if(I2CBusCollision == TRUE){
-                                    ReadModeStep = 1;
-
-                                    if(I2C_Start()){                            //Call the I2C_Start() to generate another interrupt
-                                        ReadModeStep = 2;
-                                        I2CBusCollision = FALSE;
-                                    }
-                                }
-                            }
                         }
                         
-                        break;
+                        if(ReadModeStep!=2)
+                            break;
 
                     case 2 : //Step 2: Set Slave in R Mode and Send the Address Byte
 
                         if(I2C_SendByte( (slave_adr << 1) | 0 )){
                             ReadModeStep = 3;
-
-                            //Wait for Transmit complete and check for slave ACK
-                            if(I2CSTATbits.TRSTAT == 0){
-
-                                if (I2CSTATbits.ACKSTAT == 0){                  // Did we receive an ACK ?
-                                    StepNo = 4;
-                                    ReadTries = 0;
-                                } else{
-                                    ReadTries++;
-                                }
-                            }
-                            
                         } else {
                             //Handle a bus collision event that happened in the send byte function
                             if(I2CBusCollision == TRUE){
@@ -593,7 +526,8 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                             }
                         }
                         
-                        break;
+                        if(ReadModeStep!=3)
+                            break;
 
                     case 3 : //Step 3: Wait for Transmit complete and check for slave ACK
 
@@ -604,6 +538,8 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                                 ReadTries = 0;
                             } else{
                                 ReadTries++;
+                                ReadModeStep = 1;
+                                I2C_Start();
                             }
                         } 
                        break;
@@ -630,36 +566,10 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                         if (I2C_Idle()) {
                             I2CCONbits.RCEN = 1;                                        // enable master read
                             ByteReadStep = 2;
-
-                            if(!I2CCONbits.RCEN){                                       // wait for byte to be received !(I2CSTATbits.RBF) --rcen automatically clears when recvd
-                                ByteReadStep = 3;
-
-                                I2CSTATbits.I2COV = 0;                                      //Reset bit incase data came before we extracted the last set of data
-                                *(rxPtr + ByteCount) = I2CRCV;
-
-                                if ((ByteCount + 1) == len) {
-
-                                    //9. Generate a NACK on last byte
-                                    I2CCONbits.ACKDT = 1; // send nack
-                                    I2CCONbits.ACKEN = 1;
-
-                                    ByteReadStep = 4;
-
-                                    //10. generate a stop
-                                    if(I2C_Stop()) {
-                                        ByteCount++;
-                                    } 
-
-                                } else {
-                                    I2CCONbits.ACKDT = 0; // send ACK for sequential reads
-                                    I2CCONbits.ACKEN = 1;
-
-                                     ByteCount++;
-                                     ByteReadStep = 1;
-                                }
-                            } 
                         }
-                        break;
+                        
+                        if(ByteReadStep != 2)
+                            break;
 
                     case 2 : //Step 2: Wait for Data received register
 
@@ -675,12 +585,6 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                                 I2CCONbits.ACKEN = 1;
 
                                 ByteReadStep = 3;
-
-                                //10. generate a stop
-                                if(I2C_Stop()) {
-                                    StepNo = 0;
-                                    bReturnValue = TRUE; 
-                                } 
                                 
                             } else {
                                 I2CCONbits.ACKDT = 0; // send ACK for sequential reads
@@ -691,23 +595,23 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                             }
 
                         } 
-                        break;
+                        
+                        if(ByteReadStep != 3)
+                            break;
 
                     case 3 : //Step 3: Send stop bit
 
                         //10. generate a stop (if not idle)
-                        if(I2C_Stop()) {
+                       // if(I2C_Stop()) {
                             StepNo = 0;
                             bReturnValue = TRUE;                                                //Success    
-                        }  
+                       // }  
                         break;
                         
                     default:
                         break;
                 }
-            }
-
-            if(I2C_Stop()) {
+            } else if(I2C_Stop()) {
                 StepNo = 0;
                 bReturnValue = TRUE;                                                            //Success      
             }
