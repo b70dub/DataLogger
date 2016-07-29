@@ -555,7 +555,6 @@ if(0 < iDeviceCount)                                                            
     //Begin Main Loop    
     while(!msTestCycleTimer.TimerComplete){
         
-       
         /*
         //Prevent an interrupt deadlock
         if( ((IFS0bits.INT1IF == 0) && (IEC0bits.INT1IE == 1)) ||

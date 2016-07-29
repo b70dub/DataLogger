@@ -46,6 +46,65 @@ PBCLK       I2CxBRG     PGD(1)      Approximate FSCK (two rollovers of BRG)
 Note 1: The typical value of the Pulse Gobbler Delay (PGD) is 104 ns. Refer 
 */
 
+__inline__ static BOOL I2C_Idle(void) {                                                     //- Supporting Function
+   //Check to see if the Master I2C state is inactive
+    if(I2CCONbits.SEN || I2CCONbits.PEN || I2CCONbits.RCEN || I2CCONbits.RSEN || I2CCONbits.ACKEN || I2CSTATbits.TRSTAT){
+        return FALSE;
+    } else{
+        return TRUE;
+    }   
+}
+
+__inline__ static BOOL I2C_Start(void){                                                    //- Supporting Function
+    static UINT8 StartConditionStep = 1;
+    
+    BOOL bReturnValue = FALSE;
+    
+    switch (StartConditionStep){
+        case 1 : // Step 1: wait for module idle, set the start condition
+            
+            if (I2C_Idle()) {
+                // Enable the Start condition
+                I2CCONbits.SEN = 1;
+                StartConditionStep = 2;
+            } 
+            break;
+            
+        case 2 : //Step 2: Check for Bus collision and start condition
+            
+             // Check for collisions
+            //If a bus collision occurred then clear the bus collision bit
+            if(I2CSTATbits.BCL == 1){
+                //Initiate a stop request (IF NOT PENDING)
+                if(I2C_Stop()){
+                    //Reset the start step
+                    StartConditionStep = 1;
+                } else {
+                    I2CSTATbits.BCL = 1;
+                }
+            }
+            else if(I2CSTATbits.S == 1) {
+                if(I2C_Idle()){
+                    StartConditionStep = 1;
+                    bReturnValue = TRUE;
+                }
+
+            } else {                                                                //Unknown error occured
+                //Initiate a stop request
+                I2C_Stop();
+
+                //Reset the start step
+                StartConditionStep = 1;
+            }
+            
+            break;
+    }
+    
+    return bReturnValue;
+    
+}
+
+
 void drvI2CInit(void) {                                                         // Initialization Function
 UINT16 temp = 0;
 I2CCON = 0; // reset bits to 0
