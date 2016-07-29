@@ -512,7 +512,7 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
 
                     case 2 : //Step 2: Set Slave in R Mode and Send the Address Byte
 
-                        if(I2C_SendByte( (slave_adr << 1) | 0 )){
+                        if(I2C_SendByte( (slave_adr << 1) | 1 )){
                             ReadModeStep = 3;
                         } else {
                             //Handle a bus collision event that happened in the send byte function
@@ -602,10 +602,10 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
                     case 3 : //Step 3: Send stop bit
 
                         //10. generate a stop (if not idle)
-                       // if(I2C_Stop()) {
+                        if(I2C_Stop()) {
                             StepNo = 0;
                             bReturnValue = TRUE;                                                //Success    
-                       // }  
+                        }  
                         break;
                         
                     default:
