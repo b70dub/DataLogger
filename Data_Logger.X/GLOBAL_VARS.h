@@ -20,8 +20,6 @@ extern UINT IntStatus;
 extern UINT8 NumInstalledAccels; //Number of accelerometers installed
 extern volatile UINT8 InterruptStatus;
 extern volatile UINT8 DataReady; //Flags for accelerometer interrupts during current reads (so we dont loose the interrupt)
-extern volatile UINT8 Accel1ReadStarted; 
-extern volatile UINT8 Accel2ReadStarted;
 extern UINT8 InitComplete; 
 extern volatile BOOL I2CBusCollision;
 extern volatile UINT8 ucDataArray[10];

@@ -100,9 +100,7 @@ void initMMA8452Q(UINT8 slave_adr) {
     while(!drvI2CReadRegisters(CTRL_REG4, &Temp_CTRLREG4, 1, slave_adr)) { }
     while(!drvI2CReadRegisters(CTRL_REG5, &Temp_CTRLREG5, 1, slave_adr)) { }
     
-   // Temp_CTRLREG1[0] = 0;
-    //Temp_CTRLREG1[1] = 0;
-   // MMA8452Q_SetMode(slave_adr, STANDBY); 
+
     
     *TempData = 0x08;              //0x39                                         // ODR = 400Hz, 
     drvI2CWriteRegisters(CTRL_REG1, TempData, 1, slave_adr);
