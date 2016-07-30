@@ -96,12 +96,11 @@ FIL file1, file2;      /* File objects */
 
 
 /* Interrupt service routine of external int 1    */
-void __ISR(_EXTERNAL_1_VECTOR,IPL3AUTO) INT1InterruptHandler(void){             //Acellerometer 1 : Data Ready
-    
-    INTClearFlag(INT_INT1);                                                     // Clear the interrupt flag
+void __ISR(_EXTERNAL_1_VECTOR,IPL2AUTO) INT1InterruptHandler(void){             //Acellerometer 1 : Data Ready
     
     if(0 == DataReady) {
-                                                            
+           
+        INTClearFlag(INT_INT1);                                                     // Clear the interrupt flag
         INTEnable(INT_I2C1B, INT_DISABLED);                                         // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED     
         INTEnable(INT_I2C1M, INT_DISABLED);                                         // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
       //  INTEnable(INT_INT1, INT_DISABLED);                                          // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
@@ -140,12 +139,11 @@ void __ISR(_EXTERNAL_1_VECTOR,IPL3AUTO) INT1InterruptHandler(void){             
 
 /* Interrupt service routine of external int 4    */
 
-void __ISR(_EXTERNAL_4_VECTOR,IPL4AUTO) INT4InterruptHandler(void)              //Acellerometer 2 : Data Ready
+void __ISR(_EXTERNAL_4_VECTOR,IPL2AUTO) INT4InterruptHandler(void)              //Acellerometer 2 : Data Ready
 { 
-    INTClearFlag(INT_INT4);                                                     // Clear the interrupt flag
-    
     if(0 == DataReady) {
-        
+       
+        INTClearFlag(INT_INT4);                                                     // Clear the interrupt flag
         DataReady = 2;                                                             //Global var to store which interrupt was last detected
         INTEnable(INT_I2C1B, INT_DISABLED);                                         // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
         INTEnable(INT_I2C1M, INT_DISABLED);                                         // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
@@ -216,22 +214,24 @@ Bus Collision events that generate an interrupt are:
  */
 
 ///////////////////////////////////////////////////////////////////
-void __ISR(_I2C_1_VECTOR, IPL2AUTO) _MasterI2CHandler(void)
+void __ISR(_I2C_1_VECTOR, IPL3AUTO) _MasterI2CHandler(void)
 {
      // check for Slave and Bus events and return as we are not handling these
     if (IFS0bits.I2C1SIF == 1) {
         mI2C1SClearIntFlag(); 
     }
     else{
-    
-        if (IFS0bits.I2C1MIF == 1) {
-           mI2C1MClearIntFlag();                                                   // Clear the master interrupt flag if it is set
-        }
+        
+       // if(DataReady > 0){
+            if (IFS0bits.I2C1MIF == 1) {
+               mI2C1MClearIntFlag();                                                   // Clear the master interrupt flag if it is set
+            }
 
-        //May want to use this later to reset the current i2c operation
-        if (IFS0bits.I2C1BIF == 1) {
-            mI2C1BClearIntFlag();                                                   // Clear the bus fault interrupt flag if it is set
-        }
+            //May want to use this later to reset the current i2c operation
+            if (IFS0bits.I2C1BIF == 1) {
+                mI2C1BClearIntFlag();                                                   // Clear the bus fault interrupt flag if it is set
+            }
+        //}
         
         switch (DataReady)
         {
@@ -301,9 +301,9 @@ void __ISR(_I2C_1_VECTOR, IPL2AUTO) _MasterI2CHandler(void)
                  //   INTEnable(INT_INT1, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
                  //   INTEnable(INT_INT4, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
                     
-                 //   if((PORTDbits.RD8 == 0x00) && (IFS0bits.INT1IF == 0)){
-                 //       INTSetFlag(INT_INT1);
-                  //  }
+                    if((PORTDbits.RD8 == 0x00) && (IFS0bits.INT1IF == 0)){
+                        INTSetFlag(INT_INT1);
+                    }
                     
                     // IEC0bits.INT4IE=1;
 
@@ -507,17 +507,26 @@ mConfigIntCoreTimer((CT_INT_ON | CT_INT_PRIOR_1 | CT_INT_SUB_PRIOR_0));
 
    //Setup interrupts
  //removed temporarily
-ConfigINT1(EXT_INT_PRI_3 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT1              //Acellerometer 1 : Data Ready (External interrupt)
+ConfigINT1(EXT_INT_PRI_2 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT1              //Acellerometer 1 : Data Ready (External interrupt)
 SetSubPriorityINT1(EXT_INT_SUB_PRI_2);
 
-ConfigINT4(EXT_INT_PRI_4 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT4             //future
+ConfigINT4(EXT_INT_PRI_2 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT4             //future
 SetSubPriorityINT4(EXT_INT_SUB_PRI_2);
 
 //==============================================================================
 // Set up the I2C Master Event interrupt with priority level 
 //==============================================================================
  // configure the interrupt priority for the I2C peripheral
- mI2C1SetIntPriority(I2C_INT_PRI_2);                                            //ISR priority level should match!!!!
+ mI2C1SetIntPriority(I2C_INT_PRI_3);                                            //ISR priority level should match!!!!
+
+INTEnable(INT_INT1, INT_DISABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+INTEnable(INT_INT4, INT_DISABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+                                                       
+//IntStatus = INTDisableInterrupts();
+INTClearFlag(INT_INT4); 
+INTClearFlag(INT_INT1); 
+
+//INTEnableInterrupts();
 
 //Blink the LED on power-up
 Func_ShowImAlive();
@@ -527,11 +536,9 @@ Func_ForceSlaveToReleaseSDA();
 
 //InitComplete = 0;
 
-INTClearFlag(INT_INT4); 
-INTClearFlag(INT_INT1); 
-INTEnableInterrupts();
 
-IntStatus = INTDisableInterrupts();
+
+
 
 drvI2CInit();
 
@@ -544,8 +551,11 @@ if(0 < iDeviceCount)                                                            
 {
     MMA8452_Setup(iDeviceCount, NumInstalledAccels);
     
-    INTRestoreInterrupts(IntStatus);                                            // restore the interrupts to previous state
-    
+ //   INTRestoreInterrupts(IntStatus);                                            // restore the interrupts to previous state
+    INTEnable(INT_INT1, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+    INTEnable(INT_INT4, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+
+    //   INTEnableInterrupts();      
     //Timer for test run time
     msTestCycleTimer.StartTime = mSec_CurrentCount;                                            //Main cycle timer
     msTestCycleTimer.Setpt = 3600000; // 1 hour
