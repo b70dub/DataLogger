@@ -48,16 +48,11 @@
 #include "GLOBAL_VARS.h"
 #include "I2C_HardwareDrvr.h"
 
-
-#define GetSystemClock()  (80000000ul) //pic32 runs at 80mHz
-#define TOGGLES_PER_SEC   1000
-#define CORE_TICK_RATE   (GetSystemClock()/2/TOGGLES_PER_SEC)
-
+#include "DataLoggingDefs.h"
 
 /*******************************************************************************
- Program global variables
+ Program variables
  ******************************************************************************/
- int x;             //used for looping
  int iDeviceCount = 0;
  int iTempCount;
 
@@ -87,6 +82,17 @@ DWORD acc_size;         /* Work register for fs command */
 WORD acc_files, acc_dirs;
 FILINFO Finfo;
 const BYTE ft[] = {0,12,16,32};
+
+//Data Logging Vars
+volatile UINT8 ucSDActiveBuffer = 1;
+volatile UINT8 ucSDDataBuffer_1[SDClusterSize];
+volatile UINT16 usSDDataBuffer1Count = 0;
+volatile UINT8 ucSDDataBuffer_2[SDClusterSize];
+volatile UINT16 usSDDataBuffer2Count = 0;
+UINT uiSDBytesWritten = 0;
+BOOL bMoveBuffer1ToDisk = FALSE, 
+     bMoveBuffer2ToDisk = FALSE;
+
 
 //File system object
 FATFS Fatfs;
@@ -218,9 +224,80 @@ void __ISR(_I2C_1_VECTOR, IPL3AUTO) _MasterI2CHandler(void)
 
                     DataReady = 0;                                                     // Reset var status
            
-                //     if((PORTDbits.RD11 == 0x00) && (IFS0bits.INT4IF == 0)){
-                //        INTSetFlag(INT_INT4);
-                //    }
+                    //Move sample to buffer 1
+                    if(ucSDActiveBuffer == 1){
+                        
+                        if(usSDDataBuffer1Count < (SDClusterSize - SampleSize)){
+                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = 1;
+                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[0];  // Sensor #
+                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[1];  // x1
+                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[2];  // x2
+                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[3];  // y1
+                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[4];  // y2
+                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[5];  // z1
+                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[6];  // z2
+                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[7];  // Year
+                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[8];  // Month
+                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[9];  // Day
+                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[10]; // Hour
+                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[11]; // Minute
+                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[12]; // Second
+                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = irtc_mSec & 0xFF; // Mili1
+                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[14]; // Mili2
+                            //usSDDataBuffer1Count++;
+                            
+                            irtc_mSec = 0;
+      if (++rtcSec >= 60) {
+         rtcSec = 0;
+         if (++rtcMin >= 60) {
+            rtcMin = 0;
+            if (++rtcHour >= 24) {
+               rtcHour = 0;
+               n = dom[rtcMon - 1];
+               if ((n == 28) && !(rtcYear & 3)) n++;
+               if (++rtcMday > n) {
+                  rtcMday = 1;
+                  if (++rtcMon > 12) {
+                     rtcMon = 1;
+                     rtcYear++;
+                     
+                     
+                     
+                     
+                        }
+                        else{
+                            bMoveBuffer1ToDisk = TRUE;
+                        }
+                    }
+                    //Move sample to buffer 2
+                    else {
+                        if(usSDDataBuffer2Count < (SDClusterSize - SampleSize)){
+                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = 2;
+                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[0];  // Sensor #
+                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[1];  // x1
+                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[2];  // x2
+                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[3];  // y1
+                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[4];  // y2
+                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[5];  // z1
+                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[6];  // z2
+                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[7];  // Year
+                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[8];  // Month
+                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[9];  // Day
+                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[10]; // Hour
+                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[11]; // Minute
+                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[12]; // Second
+                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[13]; // Mili1
+                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[14]; // Mili2
+                            //usSDDataBuffer2Count++;
+                        }
+                        else{
+                            bMoveBuffer1ToDisk = TRUE;
+                        }
+                    }
+                        
+                        
+                        
+      
 
                     // 12-bit accelerometer data
                   //  X1out_12_bit = ((short) (ucDataArray[0]<<8 | ucDataArray[1])) >> 4;                // Compute 12-bit X-axis acceleration output value
@@ -384,7 +461,55 @@ void Func_ShowImAlive(){
     }
     
 }
+/*********************************************************************
+ * Function:        void Func_DataLoggingInit(void)
+ * PreCondition:
+ * Input:           None
+ * Output:          None
+ * Side Effects:
+ * Overview:     Used to initialize the disk and open the data file
+ * Note:
+ ********************************************************************/
+void Func_DataLoggingInit(){
+   
+    //Initialize Disk
+    disk_initialize(0);
 
+    //Aert user SD card is being mounted
+    //printf ((const char *)"Mount SDCARD \r\n");
+    delay_ms(50);
+
+    //Mount Filesystem
+    f_mount(0, &Fatfs);
+
+    //open data.txt file
+    const char *path = "0:data1.txt";
+    f_open(&file1, path, FA_READ | FA_WRITE | FA_CREATE_ALWAYS);
+
+    //delay a little
+    delay_ms(100);
+}
+
+/*********************************************************************
+ * Function:        void Func_DataLoggingCleanup(void)
+ * PreCondition:
+ * Input:           None
+ * Output:          None
+ * Side Effects:
+ * Overview:     Used to close the data file and unmount the disk
+ * Note:
+ ********************************************************************/
+void Func_DataLoggingCleanup(){
+  
+    //Close data.txt
+    f_close(&file1);
+
+    //unmount filesystem
+    f_mount(0,NULL);
+
+    //delay some time
+    delay_ms(1000);
+}
 
 /*******************************************************************************
 * Function: int main()
@@ -452,8 +577,7 @@ LATFbits.LATF1 = 0;
 // set up the core timer interrupt with a priority of 2 and zero sub-priority
 mConfigIntCoreTimer((CT_INT_ON | CT_INT_PRIOR_1 | CT_INT_SUB_PRIOR_0));
 
-   //Setup interrupts
- //removed temporarily
+//Setup interrupts
 ConfigINT1(EXT_INT_PRI_2 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT1              //Acellerometer 1 : Data Ready (External interrupt)
 SetSubPriorityINT1(EXT_INT_SUB_PRI_2);
 
@@ -478,6 +602,7 @@ Func_ShowImAlive();
 //Force the I2C slave to release the SDA line (sometimes the Slave will not release if the pic was reset during a transfer)
 Func_ForceSlaveToReleaseSDA();
 
+//Initialize the I2C network
 drvI2CInit();
 
 //Scan the network for connected devices - if detected then allow trying to
@@ -487,6 +612,12 @@ iDeviceCount = ScanNetwork(ucAddressArray);
 
 if(0 < iDeviceCount)                                                            //initialize the i2c network 
 {
+    //Prepare the SD card, data file and buffers for use
+    Func_DataLoggingInit();
+    Func_FillTheBuffer(0,SDClusterSize,ucSDDataBuffer_1);
+    Func_FillTheBuffer(0,SDClusterSize,ucSDDataBuffer_2);
+
+    //Initialize the sensors
     MMA8452_Setup(iDeviceCount, NumInstalledAccels);
     
     INTEnable(INT_INT1, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
@@ -500,74 +631,29 @@ if(0 < iDeviceCount)                                                            
     //Begin Main Loop    
     while(!msTestCycleTimer.TimerComplete){
         
+        //Monitor to see if we need to dump the buffers to the SD card 
+        if(bMoveBuffer1ToDisk){
+            //write the data buffer to file
+            f_write(&file1, ucSDDataBuffer_1, SDClusterSize, &uiSDBytesWritten);
+            
+            //Clear out the buffer when finished
+            Func_FillTheBuffer(0,SDClusterSize,ucSDDataBuffer_1);
+            bMoveBuffer1ToDisk = FALSE;
+        }
+        else if(bMoveBuffer2ToDisk){
+            //write the data buffer to file
+            f_write(&file1, ucSDDataBuffer_2, SDClusterSize, &uiSDBytesWritten);
+            
+            //Clear out the buffer when finished
+            Func_FillTheBuffer(0,SDClusterSize,ucSDDataBuffer_2);
+            bMoveBuffer2ToDisk = FALSE;
+        }
    
     }
    
+    //Close out the file and unmount the SD card
+    Func_DataLoggingCleanup();
 }
-
-//Alert user card being initilized
- //printf ((const char *)"Init SDCARD \r\n");
-delay_ms (50);
-
-//Initialize Disk
-disk_initialize(0);
-
-//Aert user SD card is being mounted
-//printf ((const char *)"Mount SDCARD \r\n");
-delay_ms(50);
-
-//Mount Filesystem
-f_mount(0, &Fatfs);
-
-//open data.txt file
-const char *path = "0:data1.txt";
-f_open(&file1, path, FA_READ | FA_WRITE | FA_CREATE_ALWAYS);
-
-//delay a little
-delay_ms(100);
-
-//Alert user data is being written
-//LCD5110_send(0x40 + 2, 0); //Y address
-//LCD5110_send(0x80 + 0, 0); //X address
-//LCD5110_sendString ("Writing Data");
-
-//printf ((const char *)"Writing Data \r\n");
-
-//write data to data1.txt
-for (iTempCount = 0; iTempCount < 1440; iTempCount++){
-    //unsigned char buf[8];
-    unsigned char buf[12];
-
-    //convert values[] to ascii
-    //itoa(buf, values[iTempCount], 10);
-
-
-    //pointer to converted value
-    //const char *text2 = buf;
-
-    //convert values[] to ascii and pass back a pointer to the result string ---------------- BTA modified so test it!!!
-    //const char *text2 = itoa(values[iTempCount]);
-    My_itoa(values[iTempCount], buf, sizeof(buf));
-
-    //write that value into text file
-    //f_write(&file1, text2, strlen(text2), &len);
-    f_write(&file1, buf, strlen(buf), &len);
- }
-
-
-//Alert user file is closing
-//printf ((const char *)"Close File \r\n");
-
-//Close data.txt
-f_close(&file1);
-
-//Alert user card is unmounting
-//printf ((const char *)"SD Card Unmounted \r\n");
-//unmount filesystem
-f_mount(0,NULL);
-
-//delay some time
-delay_ms(1000);
 
 return 0;
 }

@@ -110,8 +110,8 @@
 
 #define GetSystemClock()        (80000000ul)
 #define GetInstructionClock()   (GetSystemClock())
-
-
+#define TOGGLES_PER_SEC   1000
+#define CORE_TICK_RATE   (GetSystemClock()/2/TOGGLES_PER_SEC)
 
 
 
