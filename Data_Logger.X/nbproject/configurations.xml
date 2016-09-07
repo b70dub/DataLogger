@@ -8,7 +8,6 @@
       <itemPath>ff.h</itemPath>
       <itemPath>ffconf.h</itemPath>
       <itemPath>integer.h</itemPath>
-      <itemPath>32_ADC.h</itemPath>
       <itemPath>diskio.h</itemPath>
       <itemPath>SystemTimer.h</itemPath>
       <itemPath>MMA8452_Config.h</itemPath>

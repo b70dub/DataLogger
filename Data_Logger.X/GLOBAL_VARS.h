@@ -26,6 +26,10 @@ extern volatile UINT8 ucDataArray[10];
 extern volatile UINT8 Temp_INT_SOURCE_REG;
 extern volatile struct msTimer msTestCycleTimer, msLogTimer1, msLogTimer2;
 
+extern volatile UINT8 ucSDDataBuffer_1[4096];
+extern volatile UINT uiDataBuffer1Count;
+extern volatile UINT8 ucSDDataBuffer_2[4096];
+extern volatile UINT uiDataBuffer2Count;
 
 #ifdef	__cplusplus
 }
