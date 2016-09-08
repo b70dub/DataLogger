@@ -32,7 +32,7 @@ struct rtcTimer Func_StartTimer(struct rtcTimer ThisTimer){
  * Overview:     This function updates the TNow structure with the current values
  * Note:
  ********************************************************************/
-void Func_UpdateSystemTime(struct rtcTimeStamp* TimeNow, BYTE rtcYear, BYTE rtcMon, BYTE rtcMday, BYTE rtcHour, BYTE rtcMin, BYTE rtcSec, int irtc_mSec){
+void Func_UpdateSystemTime(struct rtcTimeStamp* TimeNow, BYTE rtcYear, BYTE rtcMon, BYTE rtcDay, BYTE rtcHour, BYTE rtcMin, BYTE rtcSec, int irtc_mSec){
 
    if (TimeNow->msec != irtc_mSec) {
       TimeNow->msec = irtc_mSec;
@@ -42,8 +42,8 @@ void Func_UpdateSystemTime(struct rtcTimeStamp* TimeNow, BYTE rtcYear, BYTE rtcM
             TimeNow->min = rtcMin;
             if (TimeNow->hr != rtcHour) {
                TimeNow->hr = rtcHour;
-               if (TimeNow->day != rtcMday) {
-                  TimeNow->day = rtcMday;
+               if (TimeNow->day != rtcDay) {
+                  TimeNow->day = rtcDay;
                   if (TimeNow->month != rtcMon) {
                      TimeNow->month = rtcMon;
                      if (TimeNow->year != rtcYear) {

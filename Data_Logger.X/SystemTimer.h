@@ -46,7 +46,7 @@ typedef struct msTimer {
 * Sytem Timer - variables and constants
 ******************************************************************************/
 //volatile int irtc_mSec;
-///volatile BYTE rtcYear = 111, rtcMon = 11, rtcMday = 22;    // RTC date values
+///volatile BYTE rtcYear = 111, rtcMon = 11, rtcDay = 22;    // RTC date values
 //volatile BYTE rtcHour = 0, rtcMin = 0, rtcSec = 0;    // RTC time values
 //volatile unsigned long tick;                               // Used for ISR
 
@@ -54,7 +54,7 @@ typedef struct msTimer {
 * Sytem Timer - functions
 ******************************************************************************/
 void func_InitializeTime(struct rtcTimeStamp* TimeNow);
-void Func_UpdateSystemTime(struct rtcTimeStamp* TimeNow, BYTE rtcYear, BYTE rtcMon, BYTE rtcMday, BYTE rtcHour, BYTE rtcMin, BYTE rtcSec, int irtc_mSec);
+void Func_UpdateSystemTime(struct rtcTimeStamp* TimeNow, BYTE rtcYear, BYTE rtcMon, BYTE rtcDay, BYTE rtcHour, BYTE rtcMin, BYTE rtcSec, int irtc_mSec);
 void func_GetRemainingTime_rtc(struct Timer* ThisTimer, struct rtcTimeStamp* TimeNow);
 
 #ifdef	__cplusplus

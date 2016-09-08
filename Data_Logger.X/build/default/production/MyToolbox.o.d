@@ -1,2 +1,5 @@
 build/default/production/MyToolbox.o:  \
-MyToolbox.c 
+MyToolbox.c  \
+MyToolBox.h  \
+ GenericTypeDefs.h  \
+pic32mx/include/stddef.h 

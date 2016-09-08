@@ -4,6 +4,7 @@
  *
  * Created on September 7, 2016, 1:34 PM
  */
+#include"GenericTypeDefs.h"
 
 #ifndef MYTOOLBOX_H
 #define	MYTOOLBOX_H
