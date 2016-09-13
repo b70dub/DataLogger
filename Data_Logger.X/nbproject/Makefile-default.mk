@@ -51,17 +51,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=main.c mmcPIC32.c ff.c MyToolbox.c Delay_32.c GLOBAL_VARS.c I2C_HardwareDrvr.c MMA8452_I2C.c SystemTimer.c
+SOURCEFILES_QUOTED_IF_SPACED=main.c mmcPIC32.c ff.c MyToolbox.c Delay_32.c GLOBAL_VARS.c I2C_HardwareDrvr.c MMA8452_I2C.c SystemTimer.c DataLoggingDefs.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/main.o ${OBJECTDIR}/mmcPIC32.o ${OBJECTDIR}/ff.o ${OBJECTDIR}/MyToolbox.o ${OBJECTDIR}/Delay_32.o ${OBJECTDIR}/GLOBAL_VARS.o ${OBJECTDIR}/I2C_HardwareDrvr.o ${OBJECTDIR}/MMA8452_I2C.o ${OBJECTDIR}/SystemTimer.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/main.o.d ${OBJECTDIR}/mmcPIC32.o.d ${OBJECTDIR}/ff.o.d ${OBJECTDIR}/MyToolbox.o.d ${OBJECTDIR}/Delay_32.o.d ${OBJECTDIR}/GLOBAL_VARS.o.d ${OBJECTDIR}/I2C_HardwareDrvr.o.d ${OBJECTDIR}/MMA8452_I2C.o.d ${OBJECTDIR}/SystemTimer.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/main.o ${OBJECTDIR}/mmcPIC32.o ${OBJECTDIR}/ff.o ${OBJECTDIR}/MyToolbox.o ${OBJECTDIR}/Delay_32.o ${OBJECTDIR}/GLOBAL_VARS.o ${OBJECTDIR}/I2C_HardwareDrvr.o ${OBJECTDIR}/MMA8452_I2C.o ${OBJECTDIR}/SystemTimer.o ${OBJECTDIR}/DataLoggingDefs.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/main.o.d ${OBJECTDIR}/mmcPIC32.o.d ${OBJECTDIR}/ff.o.d ${OBJECTDIR}/MyToolbox.o.d ${OBJECTDIR}/Delay_32.o.d ${OBJECTDIR}/GLOBAL_VARS.o.d ${OBJECTDIR}/I2C_HardwareDrvr.o.d ${OBJECTDIR}/MMA8452_I2C.o.d ${OBJECTDIR}/SystemTimer.o.d ${OBJECTDIR}/DataLoggingDefs.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/main.o ${OBJECTDIR}/mmcPIC32.o ${OBJECTDIR}/ff.o ${OBJECTDIR}/MyToolbox.o ${OBJECTDIR}/Delay_32.o ${OBJECTDIR}/GLOBAL_VARS.o ${OBJECTDIR}/I2C_HardwareDrvr.o ${OBJECTDIR}/MMA8452_I2C.o ${OBJECTDIR}/SystemTimer.o
+OBJECTFILES=${OBJECTDIR}/main.o ${OBJECTDIR}/mmcPIC32.o ${OBJECTDIR}/ff.o ${OBJECTDIR}/MyToolbox.o ${OBJECTDIR}/Delay_32.o ${OBJECTDIR}/GLOBAL_VARS.o ${OBJECTDIR}/I2C_HardwareDrvr.o ${OBJECTDIR}/MMA8452_I2C.o ${OBJECTDIR}/SystemTimer.o ${OBJECTDIR}/DataLoggingDefs.o
 
 # Source Files
-SOURCEFILES=main.c mmcPIC32.c ff.c MyToolbox.c Delay_32.c GLOBAL_VARS.c I2C_HardwareDrvr.c MMA8452_I2C.c SystemTimer.c
+SOURCEFILES=main.c mmcPIC32.c ff.c MyToolbox.c Delay_32.c GLOBAL_VARS.c I2C_HardwareDrvr.c MMA8452_I2C.c SystemTimer.c DataLoggingDefs.c
 
 
 CFLAGS=
@@ -154,6 +154,12 @@ ${OBJECTDIR}/SystemTimer.o: SystemTimer.c  nbproject/Makefile-${CND_CONF}.mk
 	@${RM} ${OBJECTDIR}/SystemTimer.o 
 	@${FIXDEPS} "${OBJECTDIR}/SystemTimer.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/SystemTimer.o.d" -o ${OBJECTDIR}/SystemTimer.o SystemTimer.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
+${OBJECTDIR}/DataLoggingDefs.o: DataLoggingDefs.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}" 
+	@${RM} ${OBJECTDIR}/DataLoggingDefs.o.d 
+	@${RM} ${OBJECTDIR}/DataLoggingDefs.o 
+	@${FIXDEPS} "${OBJECTDIR}/DataLoggingDefs.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/DataLoggingDefs.o.d" -o ${OBJECTDIR}/DataLoggingDefs.o DataLoggingDefs.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
+	
 else
 ${OBJECTDIR}/main.o: main.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
@@ -208,6 +214,12 @@ ${OBJECTDIR}/SystemTimer.o: SystemTimer.c  nbproject/Makefile-${CND_CONF}.mk
 	@${RM} ${OBJECTDIR}/SystemTimer.o.d 
 	@${RM} ${OBJECTDIR}/SystemTimer.o 
 	@${FIXDEPS} "${OBJECTDIR}/SystemTimer.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/SystemTimer.o.d" -o ${OBJECTDIR}/SystemTimer.o SystemTimer.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
+	
+${OBJECTDIR}/DataLoggingDefs.o: DataLoggingDefs.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}" 
+	@${RM} ${OBJECTDIR}/DataLoggingDefs.o.d 
+	@${RM} ${OBJECTDIR}/DataLoggingDefs.o 
+	@${FIXDEPS} "${OBJECTDIR}/DataLoggingDefs.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -I"pic32mx/include" -I"pic32mx/include/peripheral" -MMD -MF "${OBJECTDIR}/DataLoggingDefs.o.d" -o ${OBJECTDIR}/DataLoggingDefs.o DataLoggingDefs.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
 endif
 

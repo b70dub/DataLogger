@@ -72,9 +72,11 @@
 #define SOCKWP	0 // disable write protect (1<<10)		/* Write protect switch (RB10) */
 #define SOCKINS	0 // Pretend card is always inserted (1<<11)	/* Card detect switch (RB11) */
 
-#define	FCLK_SLOW()	SPIBRG = 64		/* Set slow clock (100k-400k) */
-#define	FCLK_FAST()	SPIBRG = 0		/* Set fast clock (depends on the CSD) */
+#define	FCLK_SLOW()	SPIBRG = 255		/* Set slow clock (100k-400k) */
+#define	FCLK_FAST()	SPIBRG = 31		/* Set fast clock (depends on the CSD) */
 
+//#define    FCLK_SLOW()    _SPIEN=0;SPI1CON1bits.PPRE=1;SPI1CON1bits.SPRE=1;_SPIEN=1; 
+ //#define    FCLK_FAST()    _SPIEN=0;SPI1CON1bits.PPRE=2;SPI1CON1bits.SPRE=5;_SPIEN=1;
 
 
 /*--------------------------------------------------------------------------
@@ -224,10 +226,16 @@ void power_on (void)
 						/* Setup SPI */
 	// Setup CS as output
 	CS_SETOUT();
+    /*
+     FSCK = FPB/2*(SPIxBRG+1)
+     * For PIC32MX440 with 80mhz primary osc and 40mhz PBclk then FSCK =40000000/(2*(64+1)) =~312500hz 
+     */
+    // configured for 32 bit mode @ ~1.25 mhz bit rate - reset later to 20 MHz
+	SpiChnOpen(SPI_CHANNEL2,SPI_OPEN_MSTEN|SPI_OPEN_CKP_HIGH|SPI_OPEN_SMP_END|SPI_OPEN_MODE32,64);
+    
 	// configured for ~400 kHz operation - reset later to 20 MHz
-	SpiChnOpen(SPI_CHANNEL2,SPI_OPEN_MSTEN|SPI_OPEN_CKP_HIGH|SPI_OPEN_SMP_END|SPI_OPEN_MODE8,64); 
-//	SpiChnOpen(SPI_CHANNEL1,SPI_OPEN_MSTEN|SPI_OPEN_CKP_HIGH|SPI_OPEN_SMP_END|SPI_OPEN_MODE8,64);
-//	SPI2CONbits.ON = 1;
+	//SpiChnOpen(SPI_CHANNEL2,SPI_OPEN_MSTEN|SPI_OPEN_CKP_HIGH|SPI_OPEN_SMP_END|SPI_OPEN_MODE8,64); 
+    
 	SPI2CONbits.ON = 1;
 }
 
@@ -383,9 +391,18 @@ DSTATUS disk_initialize (
 	if (Stat & STA_NODISK) return Stat;	/* No card in the socket */
 
 	power_on();							/* Force socket power on */
-	FCLK_SLOW();
-	for (n = 10; n; n--) rcvr_spi();	/* 80 dummy clocks */
-
+    
+	//FCLK_SLOW();                                                              //BA commented out for test
+    //for (n = 10; n; n--) rcvr_spi();	/* 80 dummy clocks */                   //BA commented out for test
+    /*StartBA Test*/
+    deselect();
+    FCLK_SLOW();
+    
+    for (n = 8; n==0; n--) rcvr_spi();	/* 80 dummy clocks */
+    select();
+    
+    /*End BA test*/
+    
 	ty = 0;
 	if (send_cmd(CMD0, 0) == 1) {			/* Enter Idle state */
 		Timer1 = 1000;						/* Initialization timeout of 1000 msec */

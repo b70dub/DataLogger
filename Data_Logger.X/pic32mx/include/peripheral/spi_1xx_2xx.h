@@ -287,6 +287,8 @@ void    SpiChnOpen(SpiChannel chn, SpiOpenFlags oFlags, unsigned int srcClkDiv);
  *                  - The SPI channel is turned ON after it is configured. The use of SPI_OPEN_ON is not needed.
  *                  - For PIC32MX the srcClk is the peripheral bus clock.
  *
+ *                  Therefore for PIC32MX440 @80mhz system clk and the peripheral bus clock set to 40mhz divider (PBDIV = 2). With srcClkDiv set to 64, the 40000000/64 = 1.25mhz
+ * 
  * Example:        int srcClk=GetPBusFrequency(); SpiChnOpen(SPI_CHANNEL1, SPI_OPEN_MSTEN|SPI_OPEN_SMP_END|SPI_OPEN_MODE32, SPI_OPEN2_AUDEN|SPI_OPEN2_AUDMOD_I2S, srcClk/20000000);
  *                 will open the SPI1 and set the bit rate to 20MHz.
  ********************************************************************/
