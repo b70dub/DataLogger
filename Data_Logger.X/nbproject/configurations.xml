@@ -4,11 +4,13 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
+      <logicalFolder name="f1" displayName="SDCardFiles" projectFiles="true">
+        <itemPath>ff.h</itemPath>
+        <itemPath>ffconf.h</itemPath>
+        <itemPath>diskio.h</itemPath>
+      </logicalFolder>
       <itemPath>Delay_32.h</itemPath>
-      <itemPath>ff.h</itemPath>
-      <itemPath>ffconf.h</itemPath>
       <itemPath>integer.h</itemPath>
-      <itemPath>diskio.h</itemPath>
       <itemPath>SystemTimer.h</itemPath>
       <itemPath>MMA8452_Config.h</itemPath>
       <itemPath>HardwareProfile.h</itemPath>
@@ -22,9 +24,11 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
+      <logicalFolder name="f1" displayName="SDCardFiles" projectFiles="true">
+        <itemPath>ff.c</itemPath>
+        <itemPath>mmcPIC32.c</itemPath>
+      </logicalFolder>
       <itemPath>main.c</itemPath>
-      <itemPath>mmcPIC32.c</itemPath>
-      <itemPath>ff.c</itemPath>
       <itemPath>MyToolbox.c</itemPath>
       <itemPath>Delay_32.c</itemPath>
       <itemPath>GLOBAL_VARS.c</itemPath>
