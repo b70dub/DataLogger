@@ -87,14 +87,32 @@ const BYTE ft[] = {0,12,16,32};
 //Data Logging Vars
 volatile UINT8 ucSDActiveBuffer = 1;
 volatile UINT8 ucSDDataBuffer_1[SDClusterSize];
-volatile UINT16 usSDDataBuffer1Count = 0;
 volatile UINT8 ucSDDataBuffer_2[SDClusterSize];
-volatile UINT16 usSDDataBuffer2Count = 0;
+volatile UINT16 usSDDataBufferCount = 0;
+
+
 UINT uiSDBytesWritten = 0,
      uiSDMaxBufferLimit = 0;
-UINT8 ucSDTestValue = 0;
+UINT8   ucAccel1_SDTestCount   = 0,
+        ucAccel1_X1SDTestValue = 0,
+        ucAccel1_X2SDTestValue = 20,
+        ucAccel1_Y1SDTestValue = 40,
+        ucAccel1_Y2SDTestValue = 60,
+        ucAccel1_Z1SDTestValue = 80,
+        ucAccel1_Z2SDTestValue = 100,
+        ucAccel2_SDTestCount   = 0,
+        ucAccel2_X1SDTestValue = 120,
+        ucAccel2_X2SDTestValue = 140,
+        ucAccel2_Y1SDTestValue = 160,
+        ucAccel2_Y2SDTestValue = 180,
+        ucAccel2_Z1SDTestValue = 200,
+        ucAccel2_Z2SDTestValue = 220;
 BOOL bMoveBuffer1ToDisk = FALSE, 
-     bMoveBuffer2ToDisk = FALSE;
+     bMoveBuffer2ToDisk = FALSE,
+     bBuffer1MovedToDisk = FALSE,
+     bBuffer2MovedToDisk = FALSE;
+        
+
 
 
 //File system object
@@ -231,102 +249,172 @@ void __ISR(_I2C_1_VECTOR, IPL3AUTO) _MasterI2CHandler(void)
                     if(ucSDActiveBuffer == 1){
                         uiSDMaxBufferLimit =  SDClusterSize - SampleSize;
                         
-                        
-                        
-                        if(usSDDataBuffer1Count <= uiSDMaxBufferLimit){
-                            if(ucSDTestValue <= 254)
-                                ucSDTestValue++;
+                        if(usSDDataBufferCount <= uiSDMaxBufferLimit){
+                            if(ucAccel1_SDTestCount < 19)
+                            {
+                                ucAccel1_SDTestCount++;
+                                ucAccel1_X1SDTestValue++;
+                                ucAccel1_X2SDTestValue++;
+                                ucAccel1_Y1SDTestValue++;
+                                ucAccel1_Y2SDTestValue++;
+                                ucAccel1_Z1SDTestValue++;
+                                ucAccel1_Z2SDTestValue++;
+                            }
                             else
-                                ucSDTestValue = 0;
+                            {
+                                ucAccel1_SDTestCount = 0;
+                                ucAccel1_X1SDTestValue = 0;
+                                ucAccel1_X2SDTestValue = 20;
+                                ucAccel1_Y1SDTestValue = 40;
+                                ucAccel1_Y2SDTestValue = 60;
+                                ucAccel1_Z1SDTestValue = 80;
+                                ucAccel1_Z2SDTestValue = 100;
+                            }
                             
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = 2;                   // Sensor #
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // x1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // x2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // y1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // y2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // z1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // z2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;             // Year
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;              // Month
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;              // Day
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;             // Hour
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;              // Minute
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;              // Second
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;    // Mili1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // Mili2               
-                            //usSDDataBuffer1Count++;
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = 1;                   // Sensor #
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel1_X1SDTestValue;      // x1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel1_X2SDTestValue;      // x2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel1_Y1SDTestValue;      // y1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel1_Y2SDTestValue;      // y2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel1_Z1SDTestValue;      // z1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel1_Z2SDTestValue;      // z2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcYear;             // Year
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcMon;              // Month
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcDay;              // Day
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcHour;             // Hour
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcMin;              // Minute
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcSec;              // Second
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = irtc_mSec & 0xFF;    // Mili1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = irtc_mSec >> 8;      // Mili2            
                         }
                         else{
                             bMoveBuffer1ToDisk = TRUE;
-                            ucSDTestValue = 0;
-                            
+                            usSDDataBufferCount = 0;
                             ucSDActiveBuffer = 2;
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = 2;                   // Sensor #
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // x1
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // x2
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // y1
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // y2
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // z1
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // z2
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;             // Year
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;              // Month
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;              // Day
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;             // Hour
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;              // Minute
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;              // Second
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;    // Mili1
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // Mili2
+                            
+                            if(ucAccel1_SDTestCount < 19)
+                            {
+                                ucAccel1_SDTestCount++;
+                                ucAccel1_X1SDTestValue++;
+                                ucAccel1_X2SDTestValue++;
+                                ucAccel1_Y1SDTestValue++;
+                                ucAccel1_Y2SDTestValue++;
+                                ucAccel1_Z1SDTestValue++;
+                                ucAccel1_Z2SDTestValue++;
+                            }
+                            else
+                            {
+                                ucAccel1_SDTestCount = 0;
+                                ucAccel1_X1SDTestValue = 0;
+                                ucAccel1_X2SDTestValue = 20;
+                                ucAccel1_Y1SDTestValue = 40;
+                                ucAccel1_Y2SDTestValue = 60;
+                                ucAccel1_Z1SDTestValue = 80;
+                                ucAccel1_Z2SDTestValue = 100;
+                            }
+                           
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = 1;                   // Sensor #
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel1_X1SDTestValue;      // x1
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel1_X2SDTestValue;      // x2
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel1_Y1SDTestValue;      // y1
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel1_Y2SDTestValue;      // y2
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel1_Z1SDTestValue;      // z1
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel1_Z2SDTestValue;      // z2
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcYear;             // Year
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcMon;              // Month
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcDay;              // Day
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcHour;             // Hour
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcMin;              // Minute
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcSec;              // Second
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = irtc_mSec & 0xFF;    // Mili1
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = irtc_mSec >> 8;      // Mili2   
                         }
                     }
                     //Move sample to buffer 2
                     else {
                         uiSDMaxBufferLimit =  SDClusterSize - SampleSize;
                         
-                   
-                        if(usSDDataBuffer2Count < uiSDMaxBufferLimit){
+                        if(usSDDataBufferCount < uiSDMaxBufferLimit){
                             
-                            if(ucSDTestValue <= 254)
-                                ucSDTestValue++;
+                            if(ucAccel1_SDTestCount < 19)
+                            {
+                                ucAccel1_SDTestCount++;
+                                ucAccel1_X1SDTestValue++;
+                                ucAccel1_X2SDTestValue++;
+                                ucAccel1_Y1SDTestValue++;
+                                ucAccel1_Y2SDTestValue++;
+                                ucAccel1_Z1SDTestValue++;
+                                ucAccel1_Z2SDTestValue++;
+                            }
                             else
-                                ucSDTestValue = 0;
+                            {
+                                ucAccel1_SDTestCount = 0;
+                                ucAccel1_X1SDTestValue = 0;
+                                ucAccel1_X2SDTestValue = 20;
+                                ucAccel1_Y1SDTestValue = 40;
+                                ucAccel1_Y2SDTestValue = 60;
+                                ucAccel1_Z1SDTestValue = 80;
+                                ucAccel1_Z2SDTestValue = 100;
+                            }
                             
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = 2;                   // Sensor #
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // x1
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // x2
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // y1
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // y2
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // z1
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // z2
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;             // Year
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;              // Month
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;              // Day
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;             // Hour
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;              // Minute
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;              // Second
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;    // Mili1
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // Mili2
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = 1;                   // Sensor #
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel1_X1SDTestValue;      // x1
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel1_X2SDTestValue;      // x2
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel1_Y1SDTestValue;      // y1
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel1_Y2SDTestValue;      // y2
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel1_Z1SDTestValue;      // z1
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel1_Z2SDTestValue;      // z2
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcYear;             // Year
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcMon;              // Month
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcDay;              // Day
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcHour;             // Hour
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcMin;              // Minute
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcSec;              // Second
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = irtc_mSec & 0xFF;    // Mili1
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = irtc_mSec >> 8;      // Mili2
                             //usSDDataBuffer2Count++;
                         }
                         else{
                             bMoveBuffer2ToDisk = TRUE;
-                            ucSDTestValue = 0;
-                            
+                            usSDDataBufferCount = 0;
                             ucSDActiveBuffer = 1;
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = 2;                   // Sensor #
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // x1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // x2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // y1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // y2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // z1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // z2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;             // Year
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;              // Month
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;              // Day
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;             // Hour
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;              // Minute
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;              // Second
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;    // Mili1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // Mili2
+                            
+                            if(ucAccel1_SDTestCount < 19)
+                            {
+                                ucAccel1_SDTestCount++;
+                                ucAccel1_X1SDTestValue++;
+                                ucAccel1_X2SDTestValue++;
+                                ucAccel1_Y1SDTestValue++;
+                                ucAccel1_Y2SDTestValue++;
+                                ucAccel1_Z1SDTestValue++;
+                                ucAccel1_Z2SDTestValue++;
+                            }
+                            else
+                            {
+                                ucAccel1_SDTestCount = 0;
+                                ucAccel1_X1SDTestValue = 0;
+                                ucAccel1_X2SDTestValue = 20;
+                                ucAccel1_Y1SDTestValue = 40;
+                                ucAccel1_Y2SDTestValue = 60;
+                                ucAccel1_Z1SDTestValue = 80;
+                                ucAccel1_Z2SDTestValue = 100;
+                            }
+                            
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = 1;                   // Sensor #
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel1_X1SDTestValue;      // x1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel1_X2SDTestValue;      // x2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel1_Y1SDTestValue;      // y1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel1_Y2SDTestValue;      // y2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel1_Z1SDTestValue;      // z1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel1_Z2SDTestValue;      // z2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcYear;             // Year
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcMon;              // Month
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcDay;              // Day
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcHour;             // Hour
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcMin;              // Minute
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcSec;              // Second
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = irtc_mSec & 0xFF;    // Mili1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = irtc_mSec >> 8;      // Mili2 
                         }
                     }
                     
@@ -334,27 +422,29 @@ void __ISR(_I2C_1_VECTOR, IPL3AUTO) _MasterI2CHandler(void)
                     //Move sample to buffer 1
                     if(ucSDActiveBuffer == 1){
                         
-                        if(usSDDataBuffer1Count < (SDClusterSize - SampleSize)){
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = 1;                   // Sensor #
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[0];      // x1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[1];      // x2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[2];      // y1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[3];      // y2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[4];      // z1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[5];      // z2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcYear;             // Year
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcMon;              // Month
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcDay;              // Day
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcHour;             // Hour
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcMin;              // Minute
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcSec;              // Second
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = irtc_mSec & 0xFF;    // Mili1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = irtc_mSec >> 8;      // Mili2               
-                            //usSDDataBuffer1Count++;
+                        if(usSDDataBufferCount < (SDClusterSize - SampleSize)){
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = 1;                   // Sensor #
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[0];      // x1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[1];      // x2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[2];      // y1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[3];      // y2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[4];      // z1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[5];      // z2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcYear;             // Year
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcMon;              // Month
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcDay;              // Day
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcHour;             // Hour
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcMin;              // Minute
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcSec;              // Second
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = irtc_mSec & 0xFF;    // Mili1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = irtc_mSec >> 8;      // Mili2               
+                            //usSDDataBufferCount++;
                         }
                         else{
                             bMoveBuffer1ToDisk = TRUE;
-                            ucSDDataBuffer_2[usSDDataBuffer1Count++] = 1;                   // Sensor #
+                            usSDDataBufferCount = 0;
+                            ucSDActiveBuffer = 2;
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = 1;                   // Sensor #
                             ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[0];      // x1
                             ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[1];      // x2
                             ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[2];      // y1
@@ -374,7 +464,7 @@ void __ISR(_I2C_1_VECTOR, IPL3AUTO) _MasterI2CHandler(void)
                     //Move sample to buffer 2
                     else {
                         if(usSDDataBuffer2Count < (SDClusterSize - SampleSize)){
-                            ucSDDataBuffer_2[usSDDataBuffer1Count++] = 1;                   // Sensor #
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = 1;                   // Sensor #
                             ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[0];      // x1
                             ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[1];      // x2
                             ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucDataArray[2];      // y1
@@ -393,22 +483,23 @@ void __ISR(_I2C_1_VECTOR, IPL3AUTO) _MasterI2CHandler(void)
                         }
                         else{
                             bMoveBuffer2ToDisk = TRUE;
-                            
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = 1;                   // Sensor #
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[0];      // x1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[1];      // x2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[2];      // y1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[3];      // y2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[4];      // z1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[5];      // z2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcYear;             // Year
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcMon;              // Month
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcDay;              // Day
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcHour;             // Hour
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcMin;              // Minute
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcSec;              // Second
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = irtc_mSec & 0xFF;    // Mili1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = irtc_mSec >> 8;      // Mili2
+                            usSDDataBufferCount = 0;
+                            ucSDActiveBuffer = 1;
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = 1;                   // Sensor #
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[0];      // x1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[1];      // x2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[2];      // y1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[3];      // y2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[4];      // z1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[5];      // z2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcYear;             // Year
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcMon;              // Month
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcDay;              // Day
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcHour;             // Hour
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcMin;              // Minute
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcSec;              // Second
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = irtc_mSec & 0xFF;    // Mili1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = irtc_mSec >> 8;      // Mili2
                         }
                     }
                         
@@ -451,125 +542,195 @@ void __ISR(_I2C_1_VECTOR, IPL3AUTO) _MasterI2CHandler(void)
                     if(ucSDActiveBuffer == 1){
                         uiSDMaxBufferLimit =  SDClusterSize - SampleSize;
                         
-                        
-                        
-                        if(usSDDataBuffer1Count <= uiSDMaxBufferLimit){
-                            if(ucSDTestValue <= 254)
-                                ucSDTestValue++;
+                        if(usSDDataBufferCount <= uiSDMaxBufferLimit){
+                            if(ucAccel2_SDTestCount < 19)
+                            {
+                                ucAccel2_SDTestCount++;
+                                ucAccel2_X1SDTestValue++;
+                                ucAccel2_X2SDTestValue++;
+                                ucAccel2_Y1SDTestValue++;
+                                ucAccel2_Y2SDTestValue++;
+                                ucAccel2_Z1SDTestValue++;
+                                ucAccel2_Z2SDTestValue++;
+                            }
                             else
-                                ucSDTestValue = 0;
+                            {
+                                ucAccel2_SDTestCount = 0;
+                                ucAccel2_X1SDTestValue = 120;
+                                ucAccel2_X2SDTestValue = 140;
+                                ucAccel2_Y1SDTestValue = 160;
+                                ucAccel2_Y2SDTestValue = 180;
+                                ucAccel2_Z1SDTestValue = 200;
+                                ucAccel2_Z2SDTestValue = 220;
+                            }
                             
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = 2;                   // Sensor #
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // x1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // x2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // y1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // y2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // z1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // z2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;             // Year
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;              // Month
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;              // Day
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;             // Hour
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;              // Minute
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;              // Second
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;    // Mili1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // Mili2               
-                            //usSDDataBuffer1Count++;
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = 2;                   // Sensor #
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel2_X1SDTestValue;      // x1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel2_X2SDTestValue;      // x2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel2_Y1SDTestValue;      // y1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel2_Y2SDTestValue;      // y2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel2_Z1SDTestValue;      // z1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel2_Z2SDTestValue;      // z2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcYear;             // Year
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcMon;              // Month
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcDay;              // Day
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcHour;             // Hour
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcMin;              // Minute
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcSec;              // Second
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = irtc_mSec & 0xFF;    // Mili1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = irtc_mSec >> 8;      // Mili2            
                         }
                         else{
                             bMoveBuffer1ToDisk = TRUE;
-                            ucSDTestValue = 0;
-                            
+                            usSDDataBufferCount = 0;
                             ucSDActiveBuffer = 2;
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = 2;                   // Sensor #
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // x1
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // x2
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // y1
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // y2
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // z1
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // z2
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;             // Year
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;              // Month
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;              // Day
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;             // Hour
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;              // Minute
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;              // Second
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;    // Mili1
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // Mili2
+                            
+                            if(ucAccel2_SDTestCount < 19)
+                            {
+                                ucAccel2_SDTestCount++;
+                                ucAccel2_X1SDTestValue++;
+                                ucAccel2_X2SDTestValue++;
+                                ucAccel2_Y1SDTestValue++;
+                                ucAccel2_Y2SDTestValue++;
+                                ucAccel2_Z1SDTestValue++;
+                                ucAccel2_Z2SDTestValue++;
+                            }
+                            else
+                            {
+                                ucAccel2_SDTestCount = 0;
+                                ucAccel2_X1SDTestValue = 120;
+                                ucAccel2_X2SDTestValue = 140;
+                                ucAccel2_Y1SDTestValue = 160;
+                                ucAccel2_Y2SDTestValue = 180;
+                                ucAccel2_Z1SDTestValue = 200;
+                                ucAccel2_Z2SDTestValue = 220;
+                            }
+                           
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = 2;                   // Sensor #
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel2_X1SDTestValue;      // x1
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel2_X2SDTestValue;      // x2
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel2_Y1SDTestValue;      // y1
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel2_Y2SDTestValue;      // y2
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel2_Z1SDTestValue;      // z1
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel2_Z2SDTestValue;      // z2
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcYear;             // Year
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcMon;              // Month
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcDay;              // Day
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcHour;             // Hour
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcMin;              // Minute
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcSec;              // Second
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = irtc_mSec & 0xFF;    // Mili1
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = irtc_mSec >> 8;      // Mili2   
                         }
                     }
                     //Move sample to buffer 2
                     else {
                         uiSDMaxBufferLimit =  SDClusterSize - SampleSize;
                         
-                   
-                        if(usSDDataBuffer2Count < uiSDMaxBufferLimit){
+                        if(usSDDataBufferCount < uiSDMaxBufferLimit){
                             
-                            if(ucSDTestValue <= 254)
-                                ucSDTestValue++;
+                            if(ucAccel2_SDTestCount < 19)
+                            {
+                                ucAccel2_SDTestCount++;
+                                ucAccel2_X1SDTestValue++;
+                                ucAccel2_X2SDTestValue++;
+                                ucAccel2_Y1SDTestValue++;
+                                ucAccel2_Y2SDTestValue++;
+                                ucAccel2_Z1SDTestValue++;
+                                ucAccel2_Z2SDTestValue++;
+                            }
                             else
-                                ucSDTestValue = 0;
+                            {
+                                ucAccel2_SDTestCount = 0;
+                                ucAccel2_X1SDTestValue = 120;
+                                ucAccel2_X2SDTestValue = 140;
+                                ucAccel2_Y1SDTestValue = 160;
+                                ucAccel2_Y2SDTestValue = 180;
+                                ucAccel2_Z1SDTestValue = 200;
+                                ucAccel2_Z2SDTestValue = 220;
+                            }
                             
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = 2;                   // Sensor #
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // x1
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // x2
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // y1
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // y2
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // z1
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // z2
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;             // Year
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;              // Month
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;              // Day
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;             // Hour
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;              // Minute
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;              // Second
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;    // Mili1
-                            ucSDDataBuffer_2[usSDDataBuffer2Count++] = ucSDTestValue;      // Mili2
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = 2;                   // Sensor #
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel2_X1SDTestValue;      // x1
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel2_X2SDTestValue;      // x2
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel2_Y1SDTestValue;      // y1
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel2_Y2SDTestValue;      // y2
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel2_Z1SDTestValue;      // z1
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = ucAccel2_Z2SDTestValue;      // z2
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcYear;             // Year
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcMon;              // Month
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcDay;              // Day
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcHour;             // Hour
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcMin;              // Minute
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = rtcSec;              // Second
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = irtc_mSec & 0xFF;    // Mili1
+                            ucSDDataBuffer_2[usSDDataBufferCount++] = irtc_mSec >> 8;      // Mili2
                             //usSDDataBuffer2Count++;
                         }
                         else{
                             bMoveBuffer2ToDisk = TRUE;
-                            ucSDTestValue = 0;
-                            
+                            usSDDataBufferCount = 0;
                             ucSDActiveBuffer = 1;
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = 2;                   // Sensor #
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // x1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // x2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // y1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // y2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // z1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // z2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;             // Year
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;              // Month
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;              // Day
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;             // Hour
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;              // Minute
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;              // Second
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;    // Mili1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucSDTestValue;      // Mili2
+                            
+                            if(ucAccel2_SDTestCount < 19)
+                            {
+                                ucAccel2_SDTestCount++;
+                                ucAccel2_X1SDTestValue++;
+                                ucAccel2_X2SDTestValue++;
+                                ucAccel2_Y1SDTestValue++;
+                                ucAccel2_Y2SDTestValue++;
+                                ucAccel2_Z1SDTestValue++;
+                                ucAccel2_Z2SDTestValue++;
+                            }
+                            else
+                            {
+                                ucAccel2_SDTestCount = 0;
+                                ucAccel2_X1SDTestValue = 120;
+                                ucAccel2_X2SDTestValue = 140;
+                                ucAccel2_Y1SDTestValue = 160;
+                                ucAccel2_Y2SDTestValue = 180;
+                                ucAccel2_Z1SDTestValue = 200;
+                                ucAccel2_Z2SDTestValue = 220;
+                            }
+                            
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = 2;                   // Sensor #
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel2_X1SDTestValue;      // x1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel2_X2SDTestValue;      // x2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel2_Y1SDTestValue;      // y1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel2_Y2SDTestValue;      // y2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel2_Z1SDTestValue;      // z1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucAccel2_Z2SDTestValue;      // z2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcYear;             // Year
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcMon;              // Month
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcDay;              // Day
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcHour;             // Hour
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcMin;              // Minute
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcSec;              // Second
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = irtc_mSec & 0xFF;    // Mili1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = irtc_mSec >> 8;      // Mili2
                         }
                     }
                     /*
                     //Move sample to buffer 1
                     if(ucSDActiveBuffer == 1){
                         
-                        if(usSDDataBuffer1Count < (SDClusterSize - SampleSize)){
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = 2;                   // Sensor #
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[0];      // x1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[1];      // x2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[2];      // y1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[3];      // y2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[4];      // z1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[5];      // z2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcYear;             // Year
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcMon;              // Month
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcDay;              // Day
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcHour;             // Hour
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcMin;              // Minute
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcSec;              // Second
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = irtc_mSec & 0xFF;    // Mili1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = irtc_mSec >> 8;      // Mili2               
-                            //usSDDataBuffer1Count++;
+                        if(usSDDataBufferCount < (SDClusterSize - SampleSize)){
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = 2;                   // Sensor #
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[0];      // x1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[1];      // x2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[2];      // y1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[3];      // y2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[4];      // z1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[5];      // z2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcYear;             // Year
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcMon;              // Month
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcDay;              // Day
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcHour;             // Hour
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcMin;              // Minute
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcSec;              // Second
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = irtc_mSec & 0xFF;    // Mili1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = irtc_mSec >> 8;      // Mili2               
+                            //usSDDataBufferCount++;
                         }
                         else{
                             bMoveBuffer1ToDisk = TRUE;
@@ -613,21 +774,21 @@ void __ISR(_I2C_1_VECTOR, IPL3AUTO) _MasterI2CHandler(void)
                         else{
                             bMoveBuffer2ToDisk = TRUE;
                             
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = 2;                   // Sensor #
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[0];      // x1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[1];      // x2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[2];      // y1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[3];      // y2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[4];      // z1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = ucDataArray[5];      // z2
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcYear;             // Year
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcMon;              // Month
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcDay;              // Day
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcHour;             // Hour
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcMin;              // Minute
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = rtcSec;              // Second
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = irtc_mSec & 0xFF;    // Mili1
-                            ucSDDataBuffer_1[usSDDataBuffer1Count++] = irtc_mSec >> 8;      // Mili2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = 2;                   // Sensor #
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[0];      // x1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[1];      // x2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[2];      // y1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[3];      // y2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[4];      // z1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = ucDataArray[5];      // z2
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcYear;             // Year
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcMon;              // Month
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcDay;              // Day
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcHour;             // Hour
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcMin;              // Minute
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = rtcSec;              // Second
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = irtc_mSec & 0xFF;    // Mili1
+                            ucSDDataBuffer_1[usSDDataBufferCount++] = irtc_mSec >> 8;      // Mili2
                         }
                     }
                      * */
@@ -805,7 +966,7 @@ void Func_DataLoggingInit(){
     //Check if the disk mounting succeeded
     if(DiskStatus == 0){
         //open data.txt file
-        const char *path = "0:data1.txt";
+        const char *path = "0:data1.bin";
         f_open(&file1, path, FA_READ | FA_WRITE | FA_CREATE_ALWAYS);
 
         //delay a little
@@ -858,12 +1019,18 @@ mOSCSetPBDIV(OSC_PB_DIV_1);                                                     
 OpenCoreTimer(CORE_TICK_RATE);                                                  // Open 1 ms Timer
 INTConfigureSystem(INT_SYSTEM_CONFIG_MULT_VECTOR);
  
+//Disable the JTAG to enable digital i/o on port B pins. This was preventing the SD Card chip select pin from functioning properly
+DDPCONbits.JTAGEN = 0; 
+
 
 //Pin Config
-AD1PCFG = 0xFFFF;                                                               //set all AN pins to digital except AN0
+AD1PCFG = 0xFFFF; //set all AN pins to digital except AN0
+        
         
 //Set Pin Directions
 TRISB = 0b1000000000100001;       //AREF, VBUSON, USB_Fault set to input
+TRISBbits.TRISB13 = 0;
+
 TRISCbits.TRISC13 = 0;              
 TRISCbits.TRISC14 = 0;
 
@@ -881,12 +1048,21 @@ TRISDbits.TRISD10 = 0x1;
 TRISDbits.TRISD11 = 0x1;    
 //TRISD = 0b0000111100100001;       //BUT, SDA, SCL set to input
 TRISE = 0x0000;
+TRISFbits.TRISF0 = 0;
 TRISFbits.TRISF1 = 0;
+
+TRISGbits.TRISG6 = 0;
+TRISGbits.TRISG7 = 1;
+TRISGbits.TRISG8 = 0;
 //TRISF = 0x0000;
 //
 
 // Set pin Values
 LATB = 0x0000;
+
+LATBbits.LATB13 = 1;                                                            //Keep SD Card deselected until ready to use
+LATFbits.LATF0 = 1; 
+
 LATCbits.LATC13 = 0;
 LATCbits.LATC14 = 0;  
 LATD = 0x0000;
@@ -978,7 +1154,9 @@ if(0 < iDeviceCount)                                                            
                 
                 //Clear out the buffer when finished
                 Func_FillTheBuffer(0,SDClusterSize,ucSDDataBuffer_1);
+                usSDDataBufferCount = 0;
                 bMoveBuffer1ToDisk = FALSE;
+                bBuffer1MovedToDisk = TRUE;
             }
             else if(bMoveBuffer2ToDisk){
                 
@@ -993,8 +1171,15 @@ if(0 < iDeviceCount)                                                            
                 
                 //Clear out the buffer when finished
                 Func_FillTheBuffer(0,SDClusterSize,ucSDDataBuffer_2);
+                usSDDataBufferCount = 0;
                 bMoveBuffer2ToDisk = FALSE;
+                bBuffer2MovedToDisk = TRUE;
+
             }
+            
+            //Test logic end current test if both buffers have been copied to the SD card
+            if(bBuffer1MovedToDisk && bBuffer2MovedToDisk)
+                bEndTest = TRUE;
         }
         
         
@@ -1006,6 +1191,7 @@ if(0 < iDeviceCount)                                                            
     
     Func_ShowTestExit();
 }
+
 
 while(1);
 //return 0;

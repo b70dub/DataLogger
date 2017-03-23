@@ -21,7 +21,7 @@
 #include "diskio.h"
 
 /* Definitions for MMC/SDC command */
-#define CMD0   (0)			/* GO_IDLE_STATE */
+#define CMD0   (0)			/* GO_IDLE_STATE 0x40 0x00 0x00 0x00 0x00 0x95*/
 #define CMD1   (1)			/* SEND_OP_COND */
 #define ACMD41 (41|0x80)	/* SEND_OP_COND (SDC) */
 #define CMD8   (8)			/* SEND_IF_COND */
@@ -43,8 +43,8 @@
 
 /* Port Controls  (Platform dependent) */
 #define CS_SETOUT() TRISBbits.TRISB13 = 0
-#define CS_LOW()  _LATB13 = 0	/* MMC CS = L */
-#define CS_HIGH() _LATB13 = 1	/* MMC CS = H */
+#define CS_LOW()  _LATB13 = 0; _LATF0 = 0	/* MMC CS = L */
+#define CS_HIGH() _LATB13 = 1; _LATF0 = 1	/* MMC CS = H */
 // Change the SPI port number as needed on the following 5 lines
 #define SPIBRG  SPI2BRG                                                            //--BTA changed these to use port 2
 #define SPIBUF  SPI2BUF
@@ -72,7 +72,7 @@
 #define SOCKWP	0 // disable write protect (1<<10)		/* Write protect switch (RB10) */
 #define SOCKINS	0 // Pretend card is always inserted (1<<11)	/* Card detect switch (RB11) */
 
-#define	FCLK_SLOW()	SPIBRG = 255		/* Set slow clock (100k-400k) */
+#define	FCLK_SLOW()	SPIBRG = 127		/* Set slow clock (100k-400k) */
 #define	FCLK_FAST()	SPIBRG = 31		/* Set fast clock (depends on the CSD) */
 
 //#define    FCLK_SLOW()    _SPIEN=0;SPI1CON1bits.PPRE=1;SPI1CON1bits.SPRE=1;_SPIEN=1; 
@@ -225,18 +225,22 @@ void power_on (void)
 						/* Setup SPI2 */
 						/* Setup SPI */
 	// Setup CS as output
-	CS_SETOUT();
+	//CS_SETOUT();
     /*
      FSCK = FPB/2*(SPIxBRG+1)
      * For PIC32MX440 with 80mhz primary osc and 40mhz PBclk then FSCK =40000000/(2*(64+1)) =~312500hz 
      */
     // configured for 32 bit mode @ ~1.25 mhz bit rate - reset later to 20 MHz
-	SpiChnOpen(SPI_CHANNEL2,SPI_OPEN_MSTEN|SPI_OPEN_CKP_HIGH|SPI_OPEN_SMP_END|SPI_OPEN_MODE32,64);
+	//SpiChnOpen(SPI_CHANNEL2,SPI_OPEN_MSTEN|SPI_OPEN_CKP_HIGH|SPI_OPEN_SMP_END|SPI_OPEN_MODE32,64);
     
 	// configured for ~400 kHz operation - reset later to 20 MHz
-	//SpiChnOpen(SPI_CHANNEL2,SPI_OPEN_MSTEN|SPI_OPEN_CKP_HIGH|SPI_OPEN_SMP_END|SPI_OPEN_MODE8,64); 
+	SpiChnOpen(SPI_CHANNEL2,SPI_OPEN_MSTEN|SPI_OPEN_SMP_END|SPI_OPEN_MODE8,63); 
+   // SpiChnOpen(SPI_CHANNEL2, SPI_OPEN_CKP_HIGH |SPI_OPEN_MSTEN|SPI_OPEN_MODE8| SPI_OPEN_ON, 63);
     
+    SPI2CONbits.CKP = 1;        //1
+    SPI2CONbits.CKE = 0;        //0
 	SPI2CONbits.ON = 1;
+    
 }
 
 static
@@ -392,17 +396,18 @@ DSTATUS disk_initialize (
 
 	power_on();							/* Force socket power on */
     
-	//FCLK_SLOW();                                                              //BA commented out for test
-    //for (n = 10; n; n--) rcvr_spi();	/* 80 dummy clocks */                   //BA commented out for test
-    /*StartBA Test*/
-    deselect();
+
+    //delay_ms (500);
+  
+    //Slow the clock down initially
     FCLK_SLOW();
     
-    for (n = 8; n==0; n--) rcvr_spi();	/* 80 dummy clocks */
-    select();
+    //Disable the card (unselect the mmc_ss line cs = 1) - active low)
+    deselect(); 
     
-    /*End BA test*/
+    for (n = 0; n<=10; n++) rcvr_spi();	/* 80 dummy clocks */ 
     
+    //Now send command 0
 	ty = 0;
 	if (send_cmd(CMD0, 0) == 1) {			/* Enter Idle state */
 		Timer1 = 1000;						/* Initialization timeout of 1000 msec */
@@ -436,6 +441,7 @@ DSTATUS disk_initialize (
 		power_off();
 	}
 
+   
 	return Stat;
 }
 
