@@ -1,19 +1,17 @@
-//-----------------------------------------------------------------------------
-//
-//  Generic i2c driver
-//
-//  Author: Brian Ankeny
-//  -state machine based
-//  -supports up to 800 hz (max ODR of MMA8452)
-//  
-//  ********************************* HISTORY ********************************
-//
-//  Version : 1.0
-//  Date :
-//  Description: Initial version
-//
-//
-//-----------------------------------------------------------------------------
+/*-----------------------------------------------------------------------------
+ *
+ * File: I2C_HardwareDrvr.c
+ * Author: Brian Ankeny
+ * PIC: 32MX440F256H @ 80MHz, 3.3v
+ * MPLAB X IDE v3.35  
+ * Modified From: project created by govind-mukundan, modified to run on 32MX440F256H
+ *                and log integer as well as text values. Heavily modified to be state machine based 
+ *                to remove sample jitter (now supports dual MMA8452 @ 800hz sample rate).
+ *                800 hz is max ODR of MMA8452
+ *                All Rights belong to their respective owners.
+ *
+ *-----------------------------------------------------------------------------
+*/
 
 #include "GLOBAL_VARS.h"
 #include "GenericTypeDefs.h"
@@ -45,13 +43,12 @@ PBCLK       I2CxBRG     PGD(1)      Approximate FSCK (two rollovers of BRG)
 10 MHz      0x02F       104 ns              100 kHz
 Note 1: The typical value of the Pulse Gobbler Delay (PGD) is 104 ns. Refer 
 */
-//__inline__
- static BOOL I2C_Stop(void) {                                                     //- Supporting Function
+
+ static BOOL I2C_Stop(void) {                                                   
     if(I2CSTATbits.P != 1){
-        //Check for bus collision
+        //Check for bus collision and clear if present
         if ((I2CSTATbits.BCL == 1)) {
             I2CSTATbits.BCL = 0;
-            //I2CSTATbits = I2CSTATbits & 0xFBFF;
         }
         
         //initiate stop bit
@@ -65,17 +62,16 @@ Note 1: The typical value of the Pulse Gobbler Delay (PGD) is 104 ns. Refer
 }
     
 
- static BOOL I2C_Idle(void) {                                                     //- Supporting Function
+ static BOOL I2C_Idle(void) {                                                   
    //Check to see if the Master I2C state is inactive
     if(I2CCONbits.SEN || I2CCONbits.PEN || I2CCONbits.RCEN || I2CCONbits.RSEN || I2CCONbits.ACKEN || I2CSTATbits.TRSTAT){
-      //  I2C_Stop();
         return FALSE;
     } else{
         return TRUE;
     }   
 }
 
- static BOOL I2C_Start(void){                                                    //- Supporting Function
+ static BOOL I2C_Start(void){                                                   
     static UINT8 StartConditionStep = 1;
     
     BOOL bReturnValue = FALSE;
@@ -84,7 +80,6 @@ Note 1: The typical value of the Pulse Gobbler Delay (PGD) is 104 ns. Refer
         case 1 : // Step 1: wait for module idle, set the start condition
             
             if (I2C_Idle()) {
-                // Enable the Start condition
                 I2CCONbits.SEN = 1;
                 StartConditionStep = 2;
             } 
@@ -93,11 +88,9 @@ Note 1: The typical value of the Pulse Gobbler Delay (PGD) is 104 ns. Refer
         case 2 : //Step 2: Check for Bus collision and start condition
             
              // Check for collisions
-            //If a bus collision occurred then clear the bus collision bit
             if(I2CSTATbits.BCL == 1){
                 //Initiate a stop request (IF NOT PENDING)
                 if(I2C_Stop()){
-                    //Reset the start step
                     StartConditionStep = 1;
                 } else {
                     I2CSTATbits.BCL = 1;
@@ -109,7 +102,7 @@ Note 1: The typical value of the Pulse Gobbler Delay (PGD) is 104 ns. Refer
                     bReturnValue = TRUE;
                 }
 
-            } else {                                                                //Unknown error occured
+            } else {                                                            //Unknown error occured
                 //Initiate a stop request
                 I2C_Stop();
 
@@ -129,7 +122,7 @@ void drvI2CInit(void) {                                                         
 UINT16 temp = 0;
 I2CCON = 0; // reset bits to 0
 I2CCONbits.I2CEN = 0; // disable module
-I2CCONbits.DISSLW = 0; // Slew Rate Control: set to 1 for any speed below 400 khz. Set to 0 for 400khz  //Added BTA
+I2CCONbits.DISSLW = 0; // Slew Rate Control: set to 1 for any speed below 400 khz. Set to 0 for 400khz
 //I2CBRG = (GetPeripheralClock() / FCL) - (GetPeripheralClock() / 10000000) - 1; //Formula from datasheet
 
 I2CBRG = 0x02C;  //set based on table above and FPBDIV (see hardwareprofile.h)
@@ -193,6 +186,7 @@ BOOL get_ack_status(UINT8 address){
        return(FALSE);
 }
 
+//Added to pulse clock on startup to force slave to release SDA line
 void Func_ForceSlaveToReleaseSDA(void){
     UINT8 TempCount;
     TRISDbits.TRISD10 = 0x0;
@@ -246,7 +240,7 @@ UINT8 ScanNetwork(UINT8* ucAddressArray_ref) {
  */
 
 /* Initial call to this function should be preceded by a call to I2C_Start()*/    
-static BOOL I2C_SendByte(BYTE data){                                            //- Supporting Function
+static BOOL I2C_SendByte(BYTE data){                                            
     BOOL bError = FALSE;
     BOOL bReturnValue = FALSE;
     static UINT8 SendByteStepNo = 1;
@@ -277,7 +271,7 @@ static BOOL I2C_SendByte(BYTE data){                                            
                     I2CBusCollision = TRUE;
                     bError = TRUE;
                 } else {
-                    SendByteStepNo = 2;                          //Now wait for master interrupt for transmit complete
+                    SendByteStepNo = 2;                                         //Now wait for master interrupt for transmit complete
                 }
             } 
             break;
@@ -306,7 +300,7 @@ static BOOL I2C_SendByte(BYTE data){                                            
                  
                    //Step 3: Check for Bus Idle                                 //Bus should already be idle if the transmit is complete? (Single master only)
                     SendByteStepNo = 1;
-                    bReturnValue = TRUE;                                                      //Success
+                    bReturnValue = TRUE;                                        
                }
            } 
            break;
@@ -319,7 +313,7 @@ static BOOL I2C_SendByte(BYTE data){                                            
 /*
  
  */
-BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slave_adr) {     //- Primary Use Function
+BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slave_adr) {
 //for accel reads len = 6
     static UINT8 StepNo = 0;
     static UINT8 ReadTries = 0;
@@ -562,20 +556,8 @@ BOOL drvI2CReadRegisters(UINT8 reg, volatile UINT8* rxPtr, UINT8 len, UINT8 slav
 }
 
 
-/**
- * @brief Write data into an I2C slave
- *
- * This function can be used to write one or more sequential registers from a slave.
- * To write multiple registers, the slave must support multi-byte writes.
- *
- * @param adr The register to start writing to (UINT8)
- * @param data A pointer to where the data should be fetched from (UINT8*)
- * @param len Number of bytes/registers to write
- * @param slave_adr The 7 bit address of the slave without the R/W bits set
- *
- * @return Boolean indicating if operation completed successfully or not
- */
-BOOL drvI2CWriteRegisters(UINT8 adr, UINT8* data, UINT8 len, UINT8 slave_adr_Copy) {     //- Primary Use Function
+
+BOOL drvI2CWriteRegisters(UINT8 adr, UINT8* data, UINT8 len, UINT8 slave_adr_Copy) { 
     UINT8 i, flag, j;
     flag = 0;
     for (i = 0; i < 100; i++) {
@@ -632,14 +614,7 @@ BOOL drvI2CWriteRegisters(UINT8 adr, UINT8* data, UINT8 len, UINT8 slave_adr_Cop
 
 }
 
-/**
- * @brief A wrapper around drvI2CWriteRegisters() to write only a byte of data
- *
- * @param reg The register to start reading from (UINT8)
- * @param byte The byte to write
- * @param slave_adr The 7 bit address of the slave without the R/W bits set
- * @return Boolean indicating if operation completed successfully or not
- */
-BOOL drvI2CWriteByte(UINT8 reg, UINT8 byte, UINT8 slave_adr) {                      //- Primary Use Function
+
+BOOL drvI2CWriteByte(UINT8 reg, UINT8 byte, UINT8 slave_adr) {                  
     return ( drvI2CWriteRegisters(reg, &byte, 1, slave_adr));
 }

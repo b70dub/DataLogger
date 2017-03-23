@@ -1,9 +1,14 @@
-/* 
- * File:   MMA8452_Config.h
- * Author: Brian
+/*-----------------------------------------------------------------------------
  *
- * Created on June 6, 2016, 2:24 PM
- */
+ * File: I2C_HardwareDrvr.h
+ * Author: Brian Ankeny
+ * PIC: 32MX440F256H @ 80MHz, 3.3v
+ * MPLAB X IDE v3.35  
+ * Modified From: project created by govind-mukundan, modified to run on 32MX440F256H
+ *                All Rights belong to their respective owners.
+ *
+ *-----------------------------------------------------------------------------
+*/
 
 #include "GenericTypeDefs.h"
 
@@ -103,7 +108,6 @@ extern "C" {
 short Xout_12_bit, Yout_12_bit, Zout_12_bit;
 float Xout_g, Yout_g, Zout_g;
 
-//UINT8 ucDataArray[10];
 UINT8 ucAddressArray[3];
 UINT8 ucCurrentAddress;
 

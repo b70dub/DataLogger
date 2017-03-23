@@ -1,3 +1,16 @@
+/*
+* File: Delay_32.c
+* PIC: 32MX440F256H @ 80MHz, 3.3v
+* Compiler: MPLAB X IDE v3.35
+* Program Description: This file demonstrates logging data to an SD card that is
+*                      read from two MMA8452 accelerometers
+*            
+*
+* Modified From: from microchip file "CoreTimerDelay.c"
+*               All Rights belong to their respective owners.
+* Tested on: 32MX440F256H @ 80MHz
+*/
+
 #include "Delay_32.h"
 
 #define GetSystemClock()        (80000000ul)

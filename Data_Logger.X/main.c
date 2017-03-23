@@ -2,14 +2,13 @@
 * File: Main.c
 * Author: Brian Ankeny
 * PIC: 32MX440F256H @ 80MHz, 3.3v
-* Compiler: XC32 (v1.4, MPLAB X v2.20)
-* Program Version 0.0.0.1
+* Compiler: MPLAB X IDE v3.35
 * Program Description: This file demonstrates logging data to an SD card that is
- *                      read from two MMA8452 accelerometers
+*                      read from two MMA8452 accelerometers
 *            
 *
-* Modified From:NBIIFS from microchip forums, modified to run on 32MX440F256H
-*               and log integer as well as text values.
+* Modified From:NBIIFS from microchip forums, modified to run on 32MX440F256H,
+*               now supports multiple accelerometers and writes data to sd card
 *               All Rights belong to their respective owners.
 * Dependencies: "HardwareProfile.h", "Delay_32.h"
 * Tested on: 32MX440F256H @ 80MHz
@@ -60,7 +59,6 @@
  //int z = 0;         //count for lcd
  long values[1440]; //array for storing values
  
- 
  UINT len;          //needed for writing file
 
  volatile UINT8  TimeUpdated; //Flags for accelerometer interrupts
@@ -76,13 +74,6 @@ volatile unsigned long tick;                               // Used for ISR
  //Accell data variables
  SHORT X1out_12_bit, Y1out_12_bit, Z1out_12_bit, X2out_12_bit, Y2out_12_bit, Z2out_12_bit;
  float X1out_g, Y1out_g, Z1out_g, X2out_g, Y2out_g, Z2out_g;
-
-
-//Work registers for fs command
-DWORD acc_size;         /* Work register for fs command */
-WORD acc_files, acc_dirs;
-FILINFO Finfo;
-const BYTE ft[] = {0,12,16,32};
 
 //Data Logging Vars
 volatile UINT8 ucSDActiveBuffer = 1;
@@ -1077,20 +1068,20 @@ LATFbits.LATF1 = 0;
 mConfigIntCoreTimer((CT_INT_ON | CT_INT_PRIOR_1 | CT_INT_SUB_PRIOR_0));
 
 //Setup interrupts
-ConfigINT1(EXT_INT_PRI_2 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT1              //Acellerometer 1 : Data Ready (External interrupt)
+ConfigINT1(EXT_INT_PRI_2 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT1   //Acellerometer 1 : Data Ready (External interrupt)
 SetSubPriorityINT1(EXT_INT_SUB_PRI_2);
 
-ConfigINT4(EXT_INT_PRI_2 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT4             //future
+ConfigINT4(EXT_INT_PRI_2 | FALLING_EDGE_INT | EXT_INT_ENABLE); // Config INT4             
 SetSubPriorityINT4(EXT_INT_SUB_PRI_2);
 
 //==============================================================================
 // Set up the I2C Master Event interrupt with priority level 
 //==============================================================================
  // configure the interrupt priority for the I2C peripheral
- mI2C1SetIntPriority(I2C_INT_PRI_3);                                            //ISR priority level should match!!!!
+ mI2C1SetIntPriority(I2C_INT_PRI_3);                                            
 
-INTEnable(INT_INT1, INT_DISABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
-INTEnable(INT_INT4, INT_DISABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+INTEnable(INT_INT1, INT_DISABLED);                                              // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+INTEnable(INT_INT4, INT_DISABLED);                                              // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
                                                        
 INTClearFlag(INT_INT4); 
 INTClearFlag(INT_INT1); 
@@ -1119,11 +1110,11 @@ if(0 < iDeviceCount)                                                            
     //Initialize the sensors
     MMA8452_Setup(iDeviceCount, NumInstalledAccels);
     
-    INTEnable(INT_INT1, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
-    INTEnable(INT_INT4, INT_ENABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+    INTEnable(INT_INT1, INT_ENABLED);                                           // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
+    INTEnable(INT_INT4, INT_ENABLED);                                           // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
     
     //Timer for test run time
-    msTestCycleTimer.StartTime = mSec_CurrentCount;                                            //Main cycle timer
+    msTestCycleTimer.StartTime = mSec_CurrentCount;                             //Main cycle timer
     msTestCycleTimer.Setpt = 3600000; // 1 hour
     func_GetRemainingTime_ms(&msTestCycleTimer, mSec_CurrentCount);
 
@@ -1133,9 +1124,7 @@ if(0 < iDeviceCount)                                                            
         if(PORTDbits.RD2 == 0){ //If Switch Pressed
             bEndTest = TRUE;
             INTDisableInterrupts();
-            //INTEnable(INT_INT1, INT_DISABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
-            //INTEnable(INT_INT4, INT_DISABLED);                                   // INT_I2C1M = I2C 1 Master Event; INT_I2C1B = I2C 1 Bus Collision; INT_INT1 = External Interrupt 1; INT_INT4 = External Interrupt 4; Event  INT_DISABLED; INT_ENABLED
-
+   
             INTClearFlag(INT_INT4); 
             INTClearFlag(INT_INT1); 
         }
@@ -1194,6 +1183,5 @@ if(0 < iDeviceCount)                                                            
 
 
 while(1);
-//return 0;
 }
 
